@@ -62,7 +62,7 @@ while(cam.isOpened()):
                 print(distCoeffs)
 
                 # Output values to be used where matrix+dist is required
-                f = open('calibration.pckl', 'wb')
+                f = open('ARUCO/calib_v{VERSION}.pckl', 'wb')
                 pickle.dump((cameraMatrix, distCoeffs), f)
                 f.close()
 

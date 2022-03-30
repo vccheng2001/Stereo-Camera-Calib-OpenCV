@@ -28,7 +28,7 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 files = []
 
-VERSION = 2
+VERSION = 3
 images = glob.glob(f'CHESSBOARD/imgs_v{VERSION}/*.jpg')
 for fname in images:
     print(f'Processing image {fname}', end=' ')
@@ -46,8 +46,8 @@ for fname in images:
         imgpoints.append(corners)
         # Draw and display the corners
         cv.drawChessboardCorners(img, CHECKERBOARD, corners2, ret)
-        # cv.imshow('img', img)
-        # cv.waitKey(500)
+        cv.imshow('img', img)
+        cv.waitKey(500)
     else:
         print("Failed!")
 cv.destroyAllWindows()
@@ -77,7 +77,7 @@ for i in range(len(objpoints)):
     error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
     print(f'error {i}: {error}')
     mean_error += error
-print( "total error: {}".format(mean_error/len(objpoints)) )
+print( "\nTotal error: {}".format(mean_error/len(objpoints)) )
 
 
 print('****** DONE CALIBRATING ARUCO FROM IMAGES *********\n')

@@ -5,7 +5,7 @@ import os
 
 
 TYPE = "CHESSBOARD"
-
+VERSION = 3
 print(f'****** CAPTURING LIVE VIDEO FOR {TYPE} *********\n')
 print(f'****** make sure to specify TYPE!!!  *********\n')
 
@@ -30,16 +30,19 @@ size = (frame_width, frame_height)
 # a frame of above defined The output 
 # is stored in 'filename.avi' file.
 
-VERSION = 2
 result = cv2.VideoWriter(f'{TYPE}/vid_v{VERSION}.avi', 
                          cv2.VideoWriter_fourcc(*'MJPG'),
                          10, size)
     
 i = 0
+
+
 if not os.path.exists(f'{TYPE}/'):
     os.mkdir(f'{TYPE}/')
+
 if not os.path.exists(f'{TYPE}/imgs_v{VERSION}/'):  
     os.mkdir(f'{TYPE}/imgs_v{VERSION}/')
+
 while(True):
     ret, frame = video.read()
   
