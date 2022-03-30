@@ -11,8 +11,9 @@ import pickle
 import yaml 
 
 TYPE = "CHESSBOARD"
-CAM_NUM = 2
+CAM_NUM = "M"
 VERSION = 2
+
 if TYPE == "CHESSBOARD":
     d = {} 
     with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml') as file:
@@ -66,7 +67,14 @@ axis = np.float32([[-.5,-.5,0], [-.5,.5,0], [.5,.5,0], [.5,-.5,0],
 # Make output image fullscreen
 cv2.namedWindow('ProjectImage',cv2.WINDOW_NORMAL)
 
-cam = cv2.VideoCapture(1)
+''' NOTE: ONLY IF USING MOBILE '''
+if CAM_NUM == "M":
+    videoFile = 'CAMM_aruco.mp4'
+    cam = cv2.VideoCapture(videoFile) # USE VIDEO
+else:
+    cam = cv2.VideoCapture(1)
+
+
 # cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
 # cam.set(3, 1280)
 # cam.set(4, 720)

@@ -12,7 +12,7 @@ gridboard = aruco.GridBoard_create(
 
 # Create an image from the gridboard
 img = gridboard.draw(outSize=(988, 1400))
-cv2.imwrite("test_gridboard.jpg", img)
+cv2.imwrite("setup/aruco_board.jpg", img)
 
 # Display the image to us
 cv2.imshow('Gridboard', img)
