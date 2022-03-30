@@ -6,6 +6,7 @@ import cv2.aruco as aruco
 
 TYPE = "CHESSBOARD"
 VERSION = 2
+CAM_NUM = 2
 print(f'****** ESTIMATING AXIS ON {TYPE} V{VERSION} *********\n')
 
 ##  SET UP ARUCO 
@@ -23,7 +24,7 @@ arucoParams = aruco.DetectorParameters_create()
 
 if TYPE == "CHESSBOARD":
     d = {} 
-    with open(f'CHESSBOARD/calib_v{VERSION}.yaml') as file:
+    with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml') as file:
         documents = yaml.full_load(file)
 
         for item, doc in documents.items():
@@ -33,14 +34,14 @@ if TYPE == "CHESSBOARD":
     dist_coeffs = d['dist_coeff']
     
 else:
-    camera_matrix, dist_coeffs = np.load('CHESSBOARD/calibration_v2.yaml', allow_pickle=True)
+    camera_matrix, dist_coeffs = np.load('ARUCO/CAM{CAM_NUM}_calib_v{VERSION}.pckl', allow_pickle=True)
 
 
 
 
 videoFile = 'arucoOut.avi'
-# cap = cv2.VideoCapture(videoFile)
-cap = cv2.VideoCapture(1)
+# cap = cv2.VideoCapture(videoFile) # USE VIDEO
+cap = cv2.VideoCapture(1) # USE LIVE CAMERA 
 
 while(True):
     ret, frame = cap.read() # Capture frame-by-frame

@@ -28,8 +28,10 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 files = []
 
-VERSION = 3
-images = glob.glob(f'CHESSBOARD/imgs_v{VERSION}/*.jpg')
+TYPE="CHESSBOARD"
+CAM_NUM = 2
+VERSION = 2
+images = glob.glob(f'CHESSBOARD/CAM{CAM_NUM}_imgs_v{VERSION}/*.jpg')
 for fname in images:
     print(f'Processing image {fname}', end=' ')
     files.append(fname)
@@ -46,8 +48,8 @@ for fname in images:
         imgpoints.append(corners)
         # Draw and display the corners
         cv.drawChessboardCorners(img, CHECKERBOARD, corners2, ret)
-        cv.imshow('img', img)
-        cv.waitKey(500)
+        # cv.imshow('img', img) # show
+        # cv.waitKey(500)
     else:
         print("Failed!")
 cv.destroyAllWindows()
@@ -58,7 +60,7 @@ ret, cameraMatrix, distCoeffs, rvecs, tvecs = cv.calibrateCamera(objpoints, imgp
 
 data = {'camera_matrix': np.asarray(cameraMatrix).tolist(), 'dist_coeff': np.asarray(distCoeffs).tolist()}
 
-with open(f"CHESSBOARD/calib_v{VERSION}.yaml", "w") as f:
+with open(f"CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml", "w") as f:
     yaml.dump(data, f)
 
 print(f"Camera matrix : {cameraMatrix}\n")
@@ -79,5 +81,7 @@ for i in range(len(objpoints)):
     mean_error += error
 print( "\nTotal error: {}".format(mean_error/len(objpoints)) )
 
+with open(f"CHESSBOARD/CAM{CAM_NUM}_error_v{VERSION}.txt", 'w') as f:
+    f.write(f'mean_error: {mean_error/len(objpoints)}')
 
 print('****** DONE CALIBRATING ARUCO FROM IMAGES *********\n')

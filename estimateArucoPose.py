@@ -11,10 +11,11 @@ import pickle
 import yaml 
 
 TYPE = "CHESSBOARD"
+CAM_NUM = 2
 VERSION = 2
 if TYPE == "CHESSBOARD":
     d = {} 
-    with open(f'CHESSBOARD/calib_v{VERSION}.yaml') as file:
+    with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml') as file:
         documents = yaml.full_load(file)
 
         for item, doc in documents.items():
@@ -24,7 +25,7 @@ if TYPE == "CHESSBOARD":
     dist_coeffs = d['dist_coeff']
     
 else:
-    camera_matrix, dist_coeffs = np.load('CHESSBOARD/calibration_v2.yaml', allow_pickle=True)
+    camera_matrix, dist_coeffs = np.load('ARUCO/CAM{CAM_NUM}_calib_v{VERSION}.pckl', allow_pickle=True)
 
 
 
