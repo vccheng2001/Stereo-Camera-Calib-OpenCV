@@ -3,6 +3,10 @@ import cv2
 import cv2.aruco as aruco
 import pickle
 
+
+print('****** CALIBRATING ARUCO FROM VIDEO *********\n')
+
+
 aruco_dict = aruco.Dictionary_get(aruco.DICT_5X5_1000)
 
 # Creating a theoretical board we'll use to calculate marker positions
@@ -13,11 +17,12 @@ board = aruco.GridBoard_create(
     markerSeparation=0.01,
     dictionary=aruco_dict)
 
+VERSION = 2
 
 # Read an image or a video to calibrate your camera
 # I'm using a video and waiting until my entire gridboard is seen before calibrating
 # The following code assumes you have a 5X7 Aruco gridboard to calibrate with
-cam = cv2.VideoCapture('arucoOut_v2.avi')
+cam = cv2.VideoCapture(f'ARUCO/vid_v{VERSION}.avi')
 
 while(cam.isOpened()):
     # Capturing each frame of our video stream
@@ -71,3 +76,6 @@ while(cam.isOpened()):
         break
 
 cv2.destroyAllWindows()
+
+
+print('****** DONE CALIBRATING ARUCO FROM VIDEO *********\n')
