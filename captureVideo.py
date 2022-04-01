@@ -3,16 +3,19 @@ import cv2
 import os
    
 
-
-TYPE = "CHESSBOARD"
+save = False
+TYPE = "ARUCO_2CAMS"
 VERSION = 2
-CAM_NUM = 2
+CAM_NUM = 1
 print(f'****** CAPTURING LIVE VIDEO FOR {TYPE} *********\n')
 print(f'****** make sure to specify TYPE!!!  *********\n')
 
 # Create an object to read 
 # from camera
-video = cv2.VideoCapture(1)
+if CAM_NUM == 2:
+    video = cv2.VideoCapture(0) # 0: long wire (cam2 left)
+else:
+    video = cv2.VideoCapture(2) # camera 1 right
    
 # We need to check if camera
 # is opened previously or not
@@ -52,11 +55,11 @@ while(True):
         # Write the frame into the
         # file 'filename.avi'
 
-        
-        result.write(frame)
-        name = f'{i}.jpg'
-        if i % 10 == 0: # dont save all 
-            cv2.imwrite(os.path.join(f'{TYPE}/CAM{CAM_NUM}_imgs_v{VERSION}/', name),frame)
+        if save: 
+            result.write(frame)
+            name = f'{i}.jpg'
+            if i % 10 == 0: # dont save all 
+                cv2.imwrite(os.path.join(f'{TYPE}/CAM{CAM_NUM}_imgs_v{VERSION}/', name),frame)
         i+=1
   
         # Display the frame
@@ -80,7 +83,10 @@ result.release()
     
 # Closes all the frames
 cv2.destroyAllWindows()
-   
-print("The video was successfully saved")
+
+if save:
+    print("The video was successfully saved")
+else:
+    print("Nothing saved")
 
 print('****** DONE CAPTURING LIVE VIDEO  *********\n')

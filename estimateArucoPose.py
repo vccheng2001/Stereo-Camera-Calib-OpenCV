@@ -69,7 +69,7 @@ cv2.namedWindow('ProjectImage',cv2.WINDOW_NORMAL)
 
 ''' NOTE: ONLY IF USING MOBILE '''
 if CAM_NUM == "M":
-    videoFile = 'CAMM_aruco.mp4'
+    videoFile = 'setup/CAMM/CAMM_aruco.mp4'
     cam = cv2.VideoCapture(videoFile) # USE VIDEO
 else:
     cam = cv2.VideoCapture(1)
