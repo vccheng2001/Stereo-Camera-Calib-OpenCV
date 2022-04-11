@@ -19,13 +19,13 @@ import numpy as np
 ##################################################################
 
 TYPE = "CHESSBOARD"
-CAM_NUM = 2
-VERSION = 11
+CAM_NUM = 1
+VERSION = 13
 np.set_printoptions(precision = 4, suppress = True)
 
 if TYPE == "CHESSBOARD":
     d = {} 
-    with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml') as file:
+    with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v2.yaml') as file:
         documents = yaml.full_load(file)
 
         for item, doc in documents.items():
@@ -96,7 +96,7 @@ while(cam.isOpened()):
         # TODO: Add validation here to reject IDs/corners not part of a gridboard #
         ###########################################################################
 
-        print('corners', corners)
+        # print('corners', corners)
 
         # Outline all of the markers detected in our image
         QueryImg = aruco.drawDetectedMarkers(QueryImg, corners, borderColor=(0, 0, 255))
@@ -106,13 +106,16 @@ while(cam.isOpened()):
             # Estimate the posture of the gridboard, which is a construction of 3D space based on the 2D video 
             # object's origin in camera coordinate system
             retval, rvec, tvec = aruco.estimatePoseBoard(corners, ids, board, camera_matrix, dist_coeffs, rvec, tvec)
-            print('rvec', rvec)
-            print('tvec', tvec)
+            # print('rvec', rvec)
+            # print('tvec', tvec)
             # rvec, tvec: board pose relative to the camera (Tworld_cam)
             if retval:
                 # Draw the camera posture calculated from the gridboard
                 QueryImg = aruco.drawAxis(QueryImg, camera_matrix, dist_coeffs, rvec, tvec, 0.3)
             
+        # else:
+        #     print('not enough')
+        # print('final rvec', rvec)
         dst, jacobian = cv2.Rodrigues(rvec)
 
         
@@ -140,8 +143,7 @@ while(cam.isOpened()):
         with open(f"ARUCO_TWOCAMS_v{VERSION}/CAM{CAM_NUM}_T_v{VERSION}.yaml", "w") as f:
             yaml.dump(data, f)
 
-        if i % 10 == 0:
-            print('T cam world', Tcam_world)
+        print('T cam world', Tcam_world)
         # Display our image
         cv2.imshow('QueryImage', QueryImg)
 

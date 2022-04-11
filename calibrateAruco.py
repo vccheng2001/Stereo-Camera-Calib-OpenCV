@@ -17,13 +17,13 @@ board = aruco.GridBoard_create(
     markerSeparation=0.01,
     dictionary=aruco_dict)
 
-VERSION = 2
+VERSION = 12
 CAM_NUM = 2
 
 # Read an image or a video to calibrate your camera
 # I'm using a video and waiting until my entire gridboard is seen before calibrating
 # The following code assumes you have a 5X7 Aruco gridboard to calibrate with
-cam = cv2.VideoCapture(f'ARUCO/CAM{CAM_NUM}_vid_v{VERSION}.avi')
+cam = cv2.VideoCapture(f'ARUCO_TWOCAMS_v{VERSION}/CAM{CAM_NUM}_vid_v{VERSION}.avi')
 
 while(cam.isOpened()):
     # Capturing each frame of our video stream
@@ -63,9 +63,17 @@ while(cam.isOpened()):
                 print(distCoeffs)
 
                 # Output values to be used where matrix+dist is required
-                f = open('ARUCO/CAM{CAM_NUM}_calib_v{VERSION}.pckl', 'wb')
-                pickle.dump((cameraMatrix, distCoeffs), f)
-                f.close()
+                # f = open(f'ARUCO_TWOCAMS_v{VERSION}/CAM{CAM_NUM}_calib_v{VERSION}.pckl', 'wb')
+                # pickle.dump((cameraMatrix, distCoeffs), f)
+                # f.close()
+                import yaml
+
+                data = {'camera_matrix': np.asarray(cameraMatrix).tolist(), 'dist_coeff': np.asarray(distCoeffs).tolist()}
+
+                with open(f"CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml", "w") as f:
+                    yaml.dump(data, f)
+
+
 
                 # PRint to console our success
                 print('Calibration successful.')
