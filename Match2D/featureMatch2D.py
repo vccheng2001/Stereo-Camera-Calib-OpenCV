@@ -1,6 +1,7 @@
 import cv2 as cv
 
 
+lowes_ratio = 0.4
 def ORB_match(gry1,gry2):
 
     gry1 = cv.cvtColor(im1, cv.COLOR_BGR2GRAY)
@@ -24,11 +25,12 @@ def ORB_match(gry1,gry2):
 
     # Sort them in the order of their distance.
     matches = sorted(matches, key = lambda x:x.distance)
-    matches = matches[:40]
+    k = 40
+    matches = matches[:k]
     im3 = cv.drawMatches(im1,kp1,im2,kp2,matches,None,flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     cv.imwrite("ORB_RESULTS.png", im3)
 
-    print('# matches: ', len(matches))
+    print(f'looking at first {k} ORB matches: ', len(matches))
 
 
 
@@ -48,7 +50,7 @@ def SIFT_match(gry1, gry2):
     # Apply ratio test
     good = []
     for m,n in matches:
-        if m.distance < 0.75*n.distance:
+        if m.distance < lowes_ratio*n.distance:
             good.append([m])
             
     # cv.drawMatchesKnn expects list of lists as matches.
@@ -86,7 +88,7 @@ def FLANN_match(gry1, gry2):
 
     # ratio test as per Lowe's paper
     for i,(m,n) in enumerate(matches):
-        if m.distance < 0.7*n.distance:
+        if m.distance < lowes_ratio*n.distance:
             matchesMask[i]=[1,0]
     draw_params = dict(matchColor = (0,255,0),
                     singlePointColor = (255,0,0),
@@ -96,8 +98,8 @@ def FLANN_match(gry1, gry2):
     cv.imwrite("SIFT_w_FLANN_RESULTS.png", im3)
 
 if __name__ == "__main__":
-    im1  = cv.imread('CAM1_20.jpg')
-    im2  = cv.imread('CAM2_20.jpg')
+    im1  = cv.imread('CAM1_v11_100.jpg')
+    im2  = cv.imread('CAM2_v11_100.jpg')
 
 
     gry1 = cv.cvtColor(im1, cv.COLOR_BGR2GRAY)
@@ -106,4 +108,6 @@ if __name__ == "__main__":
     gry2 = cv.cvtColor(im2, cv.COLOR_BGR2GRAY)
     gry2 = cv.medianBlur(gry2, ksize = 5)
 
+    ORB_match(gry1, gry2)
+    SIFT_match(gry1, gry2)
     FLANN_match(gry1, gry2)

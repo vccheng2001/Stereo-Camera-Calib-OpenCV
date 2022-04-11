@@ -6,7 +6,7 @@ save = True
 video_capture_1 = cv2.VideoCapture(2) # right cam (CAM 1)
 video_capture_2 = cv2.VideoCapture(0) # left cam (CAM 2)
 
-VERSION = 4
+VERSION = 11
 TYPE = f"ARUCO_TWOCAMS_v{VERSION}"
 
 print(f'****** CAPTURING TWO VIDEOS FOR {TYPE} *********\n')
@@ -70,6 +70,6 @@ while True:
 # When everything is done, release the capture
 video_capture_1.release()
 video_capture_2.release()
-# result1.release()
-# result2.release()
+# result1.releas)e()
+# result2.release(
 cv2.destroyAllWindows()

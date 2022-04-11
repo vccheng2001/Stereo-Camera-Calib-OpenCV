@@ -12,8 +12,8 @@ Returns intrinsic matrix and calculates reprojection errors
 print('****** CALIBRATING CHESSBOARD FROM IMAGES *********\n')
 
 TYPE="CHESSBOARD"
-CAM_NUM = 1
-VERSION = 2
+CAM_NUM = 2
+VERSION = 11
 
 # ``columns`` and ``rows`` should be the number of inside corners in the
 # chessboard's columns and rows. ``show`` determines whether the frames
@@ -33,7 +33,7 @@ files = []
 
 
 
-images = glob.glob(f'CHESSBOARD/CAM{CAM_NUM}_imgs_v{VERSION}/*.jpg')
+images = glob.glob(f'CHESSBOARD_v{VERSION}/CAM{CAM_NUM}_imgs_v{VERSION}/*.jpg')
 for fname in images:
     print(f'Processing image {fname}', end=' ')
     files.append(fname)

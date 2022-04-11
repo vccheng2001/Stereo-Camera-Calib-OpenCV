@@ -7,7 +7,7 @@ import yaml
 
 
 d = {} 
-VERSION = 2
+VERSION = 11
 
 def yaml_load(file_name, item_name):
     with open(file_name) as file:
@@ -21,7 +21,7 @@ file2 = f'ARUCO_TWOCAMS_v{VERSION}/CAM2_T_v{VERSION}.yaml'
 
 Tcam1_world = yaml_load(file1, 'Tcam1_world')
 Tcam2_world = yaml_load(file2, 'Tcam2_world')
-
+np.set_printoptions(precision = 4, suppress = True)
 Tcam1_cam2 = Tcam1_world @ np.linalg.inv(Tcam2_world)
 print('Tcam1_cam2: ', Tcam1_cam2)
 

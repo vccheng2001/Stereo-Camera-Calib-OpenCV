@@ -20,11 +20,12 @@ import numpy as np
 
 TYPE = "CHESSBOARD"
 CAM_NUM = 2
-VERSION = 2
+VERSION = 11
+np.set_printoptions(precision = 4, suppress = True)
 
 if TYPE == "CHESSBOARD":
     d = {} 
-    with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v2.yaml') as file:
+    with open(f'CHESSBOARD/CAM{CAM_NUM}_calib_v{VERSION}.yaml') as file:
         documents = yaml.full_load(file)
 
         for item, doc in documents.items():
@@ -46,15 +47,16 @@ ARUCO_DICT = aruco.Dictionary_get(aruco.DICT_5X5_1000)
 board = aruco.GridBoard_create(
     markersX=5,
     markersY=7,
-    markerLength=0.04,
+    markerLength=0.04, # 4cm = 0.04 m
     markerSeparation=0.01,
     dictionary=ARUCO_DICT)
 
 ##################################################################
 # Create vectors we'll be using for rotations and translations for postures
 rvec, tvec = None, None
-
 # find pose of Tcam->world in this video
+
+
 videoFile = f'ARUCO_TWOCAMS_v{VERSION}/CAM{CAM_NUM}_vid_v{VERSION}.avi'
 cam = cv2.VideoCapture(videoFile)
 
@@ -94,29 +96,52 @@ while(cam.isOpened()):
         # TODO: Add validation here to reject IDs/corners not part of a gridboard #
         ###########################################################################
 
+        print('corners', corners)
+
         # Outline all of the markers detected in our image
         QueryImg = aruco.drawDetectedMarkers(QueryImg, corners, borderColor=(0, 0, 255))
 
         # Require 15 markers before drawing axis
         if ids is not None and len(ids) > 15:
             # Estimate the posture of the gridboard, which is a construction of 3D space based on the 2D video 
+            # object's origin in camera coordinate system
             retval, rvec, tvec = aruco.estimatePoseBoard(corners, ids, board, camera_matrix, dist_coeffs, rvec, tvec)
-
-            # The tvec of a marker is the translation (x,y,z) of the marker from the origin; 
+            print('rvec', rvec)
+            print('tvec', tvec)
+            # rvec, tvec: board pose relative to the camera (Tworld_cam)
             if retval:
                 # Draw the camera posture calculated from the gridboard
                 QueryImg = aruco.drawAxis(QueryImg, camera_matrix, dist_coeffs, rvec, tvec, 0.3)
             
-        R, jacobian = cv2.Rodrigues(rvec)
-    
-        T_cam_world = - R.T * tvec
+        dst, jacobian = cv2.Rodrigues(rvec)
 
-        data = {f'Tcam{CAM_NUM}_world': np.asarray(T_cam_world).tolist()}
+        
+        print(dst)
+
+
+
+        tcam_world = dst.T @ -tvec
+        Rcam_world = dst.T 
+
+        Tcam_world = np.matrix([[Rcam_world[0][0],Rcam_world[0][1],Rcam_world[0][2],tcam_world[0][0]],
+                             [Rcam_world[1][0],Rcam_world[1][1],Rcam_world[1][2],tcam_world[1][0]],
+                             [Rcam_world[2][0],Rcam_world[2][1],Rcam_world[2][2],tcam_world[2][0]],
+                             [0.0, 0.0, 0.0, 1.0]
+                ])
+
+
+
+        # # Tcam_world = np.linalg.inv(Tworld_cam) # camera wrt board 
+        # boardWrtCamera = np.array([Tworld_cam[0,3],Tworld_cam[1,3],Tworld_cam[2,3]])
+
+        # print(boardWrtCamera)
+
+        data = {f'Tcam{CAM_NUM}_world': np.asarray(Tcam_world).tolist()}
         with open(f"ARUCO_TWOCAMS_v{VERSION}/CAM{CAM_NUM}_T_v{VERSION}.yaml", "w") as f:
             yaml.dump(data, f)
 
         if i % 10 == 0:
-            print('T cam world', T_cam_world)
+            print('T cam world', Tcam_world)
         # Display our image
         cv2.imshow('QueryImage', QueryImg)
 
