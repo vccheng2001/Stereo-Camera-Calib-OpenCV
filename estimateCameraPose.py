@@ -20,7 +20,7 @@ import numpy as np
 
 TYPE = "CHESSBOARD"
 CAM_NUM = 1
-VERSION = 13
+VERSION = 8
 np.set_printoptions(precision = 4, suppress = True)
 
 if TYPE == "CHESSBOARD":

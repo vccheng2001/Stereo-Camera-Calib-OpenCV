@@ -17,6 +17,7 @@ if CAM_NUM == 2:
 else:
     video = cv2.VideoCapture(2) # camera 1 right
    
+
 # We need to check if camera
 # is opened previously or not
 if (video.isOpened() == False): 

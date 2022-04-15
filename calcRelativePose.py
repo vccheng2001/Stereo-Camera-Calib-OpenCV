@@ -28,3 +28,6 @@ print('Tcam1_cam2: ', Tcam1_cam2)
 data = {'Tcam1_cam2': np.asarray(Tcam1_cam2).tolist()}
 with open(f"ARUCO_TWOCAMS_v{VERSION}/Tcam1_cam2_v{VERSION}.yaml", "w") as f:
     yaml.dump(data, f)
+
+
+    # Tworld_cam2 @ Tcam1_world
