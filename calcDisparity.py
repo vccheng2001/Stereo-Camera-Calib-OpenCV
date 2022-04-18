@@ -43,9 +43,10 @@ def downsample_image(image, reduce_factor):
 	return image
 
 
-#=========================================================
-# Stereo 3D reconstruction 
-#=========================================================
+'''
+	LOAD IMGS + CALIBRATION PARAMETERS
+
+'''
 VERSION = 13
 SET = 1
 
@@ -58,33 +59,6 @@ dist1 = np.array(yaml_load(calib1_file, 'dist_coeff'))
 K2 = np.array(yaml_load(calib2_file, 'camera_matrix'))
 dist2 = np.array(yaml_load(calib2_file, 'dist_coeff'))
 
-# #Specify image paths
-# img1_path = f'3D_v{VERSION}/set{SET}/cam1.jpg'
-# img2_path = f'3D_v{VERSION}/set{SET}/cam2.jpg'
-# #Load pictures
-# img1 = cv2.imread(img1_path,0)
-# img2 = cv2.imread(img2_path,0)
-
-
-# # Initialize the stereo block matching object 
-# stereo = cv2.StereoBM_create(numDisparities=16, blockSize=5)
-
-# # Compute the disparity image
-# disparity = stereo.compute(img1, img2)
-
-# # Normalize the image for representation
-# min = disparity.min()
-# max = disparity.max()
-# disparity = np.uint8(0 * (disparity - min) / (max - min))
-
-# # Display the result
-# cv2.imshow('disparity', np.hstack((img1, img2, disparity)))
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
-
-# print(f'K1:{K1}, dist1:{dist1}')
-# print(f'K2:{K2}, dist2:{dist2}')
-
 #Specify image paths
 img1_path = f'3D_v{VERSION}/set{SET}/cam1.jpg'
 img2_path = f'3D_v{VERSION}/set{SET}/cam2.jpg'
@@ -96,8 +70,8 @@ img2 = cv2.imread(img2_path)
 h,w = img2.shape[:2]
 
 #Get optimal camera matrix for better undistortion 
-# K1, roi1 = cv2.getOptimalNewCameraMatrix(K1,dist1,(w,h),1,(w,h))
-# K2, roi2 = cv2.getOptimalNewCameraMatrix(K2,dist2,(w,h),1,(w,h))
+K1, roi1 = cv2.getOptimalNewCameraMatrix(K1,dist1,(w,h),1,(w,h))
+K2, roi2 = cv2.getOptimalNewCameraMatrix(K2,dist2,(w,h),1,(w,h))
 
 #Undistort images
 img1 = cv2.undistort(img1, K1, dist1, None, K1)
@@ -115,7 +89,10 @@ img2 = cv2.undistort(img2, K2, dist2, None, K2)
 # img2 = downsample_image(img2,3)
 
 
+'''
+	COMPUTE DISPARITY MAP
 
+'''
 #Set disparity parameters
 #Note: disparity range is tuned according to specific parameters obtained through trial and error. 
 win_size = 5
@@ -143,7 +120,10 @@ plt.show()
 
 
 
+'''
+	DEPTH FROM DISPARITY 
 
+'''
 
 #Generate  point cloud. 
 print ("\nGenerating the 3D map...")
@@ -151,8 +131,9 @@ print ("\nGenerating the 3D map...")
 h,w = img2.shape[:2]
 #Load focal length. 
 focal_length = K1[0][0]
-#Perspective transformation matrix
-#This transformation matrix is from the openCV documentation, didn't seem to work for me. 
+
+
+''' Q MATRIX FOR CALCULATING DEPTH Z  '''
 Q = np.float32([[1,0,0,-w/2.0],
     [0,-1,0,h/2.0],
     [0,0,0,-focal_length],
@@ -163,10 +144,57 @@ Q2 = np.float32([[1,0,0,0],
     [0,-1,0,0],
     [0,0,focal_length*0.05,0], #Focal length multiplication obtained experimentally. 
     [0,0,0,1]])
-#Reproject points into 3D
-points_3D = cv2.reprojectImageTo3D(disparity, Q2)
+Q3 = np.zeros((4,4))
 
-print('points3d', points_3D)
+
+
+'''
+	CALCULATE Q FROM STEREORECTIFY
+
+'''
+RT = np.array([[ 0.9947 , 0.0261, -0.0996,  0.1733],
+ [-0.0265 , 0.9996, -0.0018, -0.0015],
+ [ 0.0996 , 0.0044 , 0.995 , -0.006 ],
+ [ 0,      0.,      0.  ,    1.    ]])
+R  = RT[:3,:3]
+T = RT[:3, 3]
+
+# exit(-1)
+cv2.stereoRectify(cameraMatrix1 = K1,cameraMatrix2 = K2,
+                  distCoeffs1 = dist1, distCoeffs2 = dist2,
+                  imageSize = img1.shape[:2],
+                  R = R,T=T,
+                  R1 = None, R2 = None,
+                  P1 =  None, P2 =  None, 
+                  Q = Q3)
+'''
+	 INSTEAD OF USING Q MATRIX, CALCULATE Z = B*F / D
+
+'''
+
+
+B = 0.1733# dist between two cameras 
+depth_map = np.zeros_like(disparity)
+print('depth map shape', depth_map.shape)
+print('B: ', B, 'focal length: ', focal_length)
+print('h', h, 'w', w)
+for i in range(h):
+	for j in range(w):
+		try:
+			depth_map[i][j] = (B*focal_length) / disparity[i][j]
+		except:
+			depth_map[i][j] = 0
+
+
+'''
+	GENERATE OUTPUT POINT CLOUD
+
+'''
+points_3D = np.dstack((img1[:,:,:2], depth_map))
+# # #Reproject points into 3D
+# points_3D = cv2.reprojectImageTo3D(disparity, Q2)
+
+print('points3d', points_3D.shape)
 #Get color points
 colors = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
 #Get rid of points with value 0 (i.e no depth)
