@@ -39,33 +39,42 @@ cv2.createTrackbar('minDisparity','disp',5,25,nothing)
 # Creating an object of StereoBM algorithm
 stereo = cv2.StereoBM_create()
 
+
+
 while True:
 
-    # Capturing and storing left and right camera images
-    retL, imgL= CamL.read()
-    retR, imgR= CamR.read()
+    # is camera stream or video
+    cap_left = cv2.VideoCapture(0)
+    cap_right = cv2.VideoCapture(2)
+   
+
+    K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q = load_stereo_coefficients('outputs/calib.txt')  # Get cams params
+
+    if not cap_left.isOpened() and not cap_right.isOpened():  # If we can't get images from both sources, error
+        print("Can't open the streams!")
+        sys.exit(-1)
     
     # Proceed only if the frames have been captured
-    if retL and retR:
-        imgR_gray = cv2.cvtColor(imgR,cv2.COLOR_BGR2GRAY)
-        imgL_gray = cv2.cvtColor(imgL,cv2.COLOR_BGR2GRAY)
+    if cap_left and cap_right:
 
-        K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q = load_stereo_coefficients('outputs/calib.txt')  # Get cams pa
-
-        height, width, channel = imgL.shape  # We will use the shape for remap
+        _, leftFrame = cap_left.retrieve()
+        _, rightFrame = cap_right.retrieve()
+        height, width, channel = leftFrame.shape  # We will use the shape for remap
 
         # K1, D1, R1, P1,
         # 
 
-        leftMapX, leftMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
-        left_rectified = cv2.remap(imgL_gray, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
-        rightMapX, rightMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
-        right_rectified = cv2.remap(imgR_gray, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        leftMapX, leftMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
+        left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        rightMapX, rightMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
+        right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
-     
+    
+        gray_left = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2GRAY)
+        gray_right = cv2.cvtColor(rightFrame, cv2.COLOR_BGR2GRAY)
 
-        Left_nice = right_rectified
-        Right_nice = left_rectified
+        Left_nice = gray_left
+        Right_nice = gray_right
 
         # Updating the parameters based on the trackbar positions
         numDisparities = cv2.getTrackbarPos('numDisparities','disp')*16
