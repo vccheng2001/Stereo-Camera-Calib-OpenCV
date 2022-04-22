@@ -4,7 +4,7 @@ import argparse
 import sys
 from utils import load_stereo_coefficients, create_output
 import matplotlib.pyplot as plt
-def depth_map(imgL, imgR):
+def generate_depth_map(imgL, imgR):
     """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
     # SGBM Parameters -----------------
     window_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
@@ -81,7 +81,13 @@ if __name__ == '__main__':
         gray_left = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2GRAY)
         gray_right = cv2.cvtColor(rightFrame, cv2.COLOR_BGR2GRAY)
 
-        disparity_image = depth_map(gray_left, gray_right)  # Get the disparity map
+        disparity_image = generate_depth_map(gray_left, gray_right)  # Get the disparity map
+
+        # k  = cv2.waitKey(10000)
+
+        # if k == 27:         # If escape was pressed exit
+        #     cv2.destroyAllWindows()
+        #     break
 
         # Show the images
         # cv2.imshow('left(R)', leftFrame)
@@ -93,10 +99,51 @@ if __name__ == '__main__':
         # plt.show()
 
 
-        B = 13 
-        focal_length = 1391.5 # focal length 
+        # B = 13 
+        # focal_length = 1391.5 # focal length 
 
-        depth = B*focal_length / disparity_image
+        # depth = B*focal_length / disparity_image
+
+        depth_map = disparity_image
+
+
+        depth_thresh = 100.0 # Threshold for SAFE distance (in cm)
+
+        # Mask to segment regions with depth less than threshold
+        mask = cv2.inRange(depth_map,10,depth_thresh)
+
+        output_canvas = leftFrame
+
+        # Check if a significantly large obstacle is present and filter out smaller noisy regions
+        if np.sum(mask)/255.0 > 0.01*mask.shape[0]*mask.shape[1]:
+
+            # Contour detection 
+            contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            cnts = sorted(contours, key=cv2.contourArea, reverse=True)
+            
+            # Check if detected contour is significantly large (to avoid multiple tiny regions)
+            if cv2.contourArea(cnts[0]) > 0.01*mask.shape[0]*mask.shape[1]:
+
+                x,y,w,h = cv2.boundingRect(cnts[0])
+
+                # finding average depth of region represented by the largest contour 
+                mask2 = np.zeros_like(mask)
+                cv2.drawContours(mask2, cnts, 0, (255), -1)
+
+                # Calculating the average depth of the object closer than the safe distance
+                depth_mean, _ = cv2.meanStdDev(depth_map, mask=mask2)
+                
+                # Display warning text
+                cv2.putText(output_canvas, "WARNING !", (x+5,y+25), 1, 2, (0,0,255), 3, 2)
+                cv2.putText(output_canvas, "Object at", (x+5,y+50), 1, 2, (100,10,25), 3, 2)
+                cv2.putText(output_canvas, "%.2f cm"%depth_mean, (x+5,y+75), 1, 2, (100,10,25), 3, 2)
+
+        else:
+            cv2.putText(output_canvas, "SAFE!", (100,100),1,3,(0,255,0),3,3)
+
+        print('showing')
+        cv2.imshow('output_canvas',output_canvas)
+        cv2.waitKey(50)
 
 
 
