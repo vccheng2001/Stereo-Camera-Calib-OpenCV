@@ -39,7 +39,7 @@ def generate_depth_map(imgL, imgR):
     dispr = np.int16(dispr)
     filteredImg = wls_filter.filter(displ, imgL, None, dispr)  # important to put "imgL" here!!!
 
-    filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX);
+    filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX)
     filteredImg = np.uint8(filteredImg)
 
     # filteredImg = cv2.applyColorMap(filteredImg, cv2.COLORMAP_JET)
@@ -97,9 +97,22 @@ if __name__ == '__main__':
         # cv2.imshow('right(R)', rightFrame)
         cv2.imshow('Disparity', disparity_image)
         cv2.waitKey(50)
+        print(disparity_image)
         # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
         # plt.show()
+
+        # ''' Calc depth from B*F/disparity'''
+        # B = 13
+        # F = 1391.5
+        # depth = B * F / disparity_image
+
+        ''' Calc depth from reproject3D'''
+        depth = cv2.reprojectImageTo3D(disparity_image, Q)
+
+
+
+        print(depth)
 
 
 

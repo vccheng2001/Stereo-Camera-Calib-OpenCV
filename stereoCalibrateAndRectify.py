@@ -10,6 +10,7 @@ criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 image_size = None
 
 
+VERSION = 14
 def stereo_calibrate():
     """ Stereo calibration and rectification """
     objp, leftp, rightp = load_image_points()
@@ -51,8 +52,12 @@ def load_image_points():
     right_imgpoints = []  # 2d points in image plane.
 
     # Get images for left and right directory. Since we use prefix and formats, both image set can be in the same dir.
-    left_images = glob.glob('CHESSBOARD_TWOCAMS_v2/CAM2_imgs_v2/*.jpg')
-    right_images = glob.glob('CHESSBOARD_TWOCAMS_v2/CAM1_imgs_v2/*.jpg')
+    
+    
+    left_images = glob.glob(f'CHESSBOARD_TWOCAMS_v{VERSION}/CAM2_imgs_v{VERSION}/*.jpg')
+    right_images = glob.glob(f'CHESSBOARD_TWOCAMS_v{VERSION}/CAM1_imgs_v{VERSION}/*.jpg')
+
+    print(len(left_images), len(right_images))
 
     # Images should be perfect pairs. Otherwise all the calibration will be false.
     # Be sure that first cam and second cam images are correctly prefixed and numbers are ordered as pairs.
