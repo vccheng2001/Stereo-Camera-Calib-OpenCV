@@ -1,6 +1,7 @@
 
 import yaml
 import cv2
+import numpy as np
 def yaml_load(file_name, item_name):
     with open(file_name) as file:
         res = yaml.full_load(file)
@@ -50,3 +51,26 @@ def load_stereo_coefficients(path):
 
     cv_file.release()
     return [K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q]
+
+
+
+
+#Function to create point cloud file
+def create_output(vertices, colors, filename):
+	colors = colors.reshape(-1,3)
+	vertices = np.hstack([vertices.reshape(-1,3),colors])
+
+	ply_header = '''ply
+		format ascii 1.0
+		element vertex %(vert_num)d
+		property float x
+		property float y
+		property float z
+		property uchar red
+		property uchar green
+		property uchar blue
+		end_header
+		'''
+	with open(filename, 'w') as f:
+		f.write(ply_header %dict(vert_num=len(vertices)))
+		np.savetxt(f,vertices,'%f %f %f %d %d %d')

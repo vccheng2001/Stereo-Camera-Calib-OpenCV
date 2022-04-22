@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 import argparse
 import sys
-from utils import load_stereo_coefficients
-
+from utils import load_stereo_coefficients, create_output
+import matplotlib.pyplot as plt
 def depth_map(imgL, imgR):
     """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
     # SGBM Parameters -----------------
@@ -68,10 +68,13 @@ if __name__ == '__main__':
         _, rightFrame = cap_right.retrieve()
         height, width, channel = leftFrame.shape  # We will use the shape for remap
 
-        # leftMapX, leftMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
-        # left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
-        # rightMapX, rightMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
-        # right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        # K1, D1, R1, P1,
+        # 
+
+        leftMapX, leftMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
+        left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        rightMapX, rightMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
+        right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
 
         # We need grayscale for disparity map.
@@ -81,12 +84,62 @@ if __name__ == '__main__':
         disparity_image = depth_map(gray_left, gray_right)  # Get the disparity map
 
         # Show the images
-        cv2.imshow('left(R)', leftFrame)
-        cv2.imshow('right(R)', rightFrame)
-        cv2.imshow('Disparity', disparity_image)
+        # cv2.imshow('left(R)', leftFrame)
+        # cv2.imshow('right(R)', rightFrame)
+        # cv2.imshow('Disparity', disparity_image)
+
+        plt.imshow(disparity_image, cmap='plasma')
+        plt.colorbar()
+        plt.show()
+
 
         if cv2.waitKey(1) & 0xFF == ord('q'):  # Get key to stop stream. Press q for exit
             break
+
+
+        # # B: 13 cm = 0.13 M
+        # B = 13 
+        # focal_length = 1391.5 # focal length 
+
+        # depth = B*focal_length / disparity_image
+
+        # concat[]
+
+        # cv2.imshow('Depth', depth)
+        # cv2.waitKey(0)
+
+       
+
+     
+
+        # depth_map = np.zeros_like(disparity_image)
+        # print('depth map shape', depth_map.shape)
+        # print('B: ', B, 'focal length: ', focal_length)
+        # for i in range(height):
+        #     for j in range(width):
+        #         try:
+        #             depth_map[i][j] = (B*focal_length) / disparity_image[i][j]
+        #         except:
+        #             depth_map[i][j] = 0
+
+
+        # points_3D = cv2.reprojectImageTo3D(disparity_image, Q2)
+        # #Get color points
+        # colors = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+        # #Get rid of points with value 0 (i.e no depth)
+        # mask_map = disparity_image > disparity_image.min()
+        # #Mask colors and points. 
+        # output_points = points_3D[mask_map]
+        # output_colors = colors[mask_map]
+        # #Define name for output file
+        # output_file = 'reconstructed.ply'
+        # #Generate point cloud 
+        # print ("\n Creating the output file... \n")
+        # create_output(output_points, output_colors, output_file)
+
+
+
+
 
     # Release the sources.
     cap_left.release()

@@ -1,5 +1,6 @@
 import numpy as np 
 import cv2
+from utils import load_stereo_coefficients
 
 # Check for left and right camera IDs
 # These values can change depending on the system
@@ -49,25 +50,22 @@ while True:
         imgR_gray = cv2.cvtColor(imgR,cv2.COLOR_BGR2GRAY)
         imgL_gray = cv2.cvtColor(imgL,cv2.COLOR_BGR2GRAY)
 
-     
-        # # Applying stereo image rectification on the left image
-        # Left_nice = cv2.remap(imgL_gray,
-        #                     Left_Stereo_Map_x,
-        #                     Left_Stereo_Map_y,
-        #                     cv2.INTER_LANCZOS4,
-        #                     cv2.BORDER_CONSTANT,
-        #                     0)
-        
-        # # Applying stereo image rectification on the right image
-        # Right_nice= cv2.remap(imgR_gray,
-        #                     Right_Stereo_Map_x,
-        #                     Right_Stereo_Map_y,
-        #                     cv2.INTER_LANCZOS4,
-        #                     cv2.BORDER_CONSTANT,
-        #                     0)
+        K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q = load_stereo_coefficients('outputs/calib.txt')  # Get cams pa
 
-        Left_nice = imgL_gray
-        Right_nice = imgR_gray
+        height, width, channel = imgL.shape  # We will use the shape for remap
+
+        # K1, D1, R1, P1,
+        # 
+
+        leftMapX, leftMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
+        left_rectified = cv2.remap(imgL_gray, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        rightMapX, rightMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
+        right_rectified = cv2.remap(imgR_gray, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+
+     
+
+        Left_nice = right_rectified
+        Right_nice = left_rectified
 
         # Updating the parameters based on the trackbar positions
         numDisparities = cv2.getTrackbarPos('numDisparities','disp')*16
