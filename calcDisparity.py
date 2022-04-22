@@ -73,9 +73,9 @@ h,w = img2.shape[:2]
 K1, roi1 = cv2.getOptimalNewCameraMatrix(K1,dist1,(w,h),1,(w,h))
 K2, roi2 = cv2.getOptimalNewCameraMatrix(K2,dist2,(w,h),1,(w,h))
 
-#Undistort images
-img1 = cv2.undistort(img1, K1, dist1, None, K1)
-img2 = cv2.undistort(img2, K2, dist2, None, K2)
+# #Undistort images
+# img1 = cv2.undistort(img1, K1, dist1, None, K1)
+# img2 = cv2.undistort(img2, K2, dist2, None, K2)
 
 # cv2.imshow('img1', img1)
 # cv2.waitKey(0)
@@ -96,19 +96,19 @@ img2 = cv2.undistort(img2, K2, dist2, None, K2)
 #Set disparity parameters
 #Note: disparity range is tuned according to specific parameters obtained through trial and error. 
 win_size = 5
-min_disp = -1
+min_disp = 0
 max_disp = 63 #min_disp * 9
-num_disp = max_disp - min_disp # Needs to be divisible by 16
+num_disp = 32#max_disp - min_disp # Needs to be divisible by 16
 #Create Block matching object. 
 stereo = cv2.StereoSGBM_create(minDisparity= min_disp,
  numDisparities = num_disp,
- blockSize = 5,
+ blockSize = 0,
  uniquenessRatio = 5,
- speckleWindowSize = 5,
- speckleRange = 5,
- disp12MaxDiff = 1,
- P1 = 8*3*win_size**2,#8*3*win_size**2,
- P2 =32*3*win_size**2) #32*3*win_size**2)
+ speckleWindowSize = 0,
+ speckleRange = 0,
+ disp12MaxDiff = 0,
+ P1 = 0,#8*3*win_size**2,#8*3*win_size**2,
+ P2 =0)#32*3*win_size**2) #32*3*win_size**2)
 #Compute disparity map
 print ("\nComputing the disparity  map...")
 disparity = stereo.compute(img1, img2)
@@ -116,6 +116,7 @@ disparity = stereo.compute(img1, img2)
 #Show disparity map before generating 3D cloud to verify that point cloud will be usable. 
 plt.imshow(disparity,'gray')
 plt.show()
+exit(-1)
 
 
 
@@ -190,9 +191,9 @@ for i in range(h):
 	GENERATE OUTPUT POINT CLOUD
 
 '''
-points_3D = np.dstack((img1[:,:,:2], depth_map))
+# points_3D = np.dstack((img1[:,:,:2], depth_map))
 # # #Reproject points into 3D
-# points_3D = cv2.reprojectImageTo3D(disparity, Q2)
+points_3D = cv2.reprojectImageTo3D(disparity, Q2)
 
 print('points3d', points_3D.shape)
 #Get color points
