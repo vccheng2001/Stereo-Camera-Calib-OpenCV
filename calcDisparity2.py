@@ -1,172 +1,119 @@
+import numpy as np 
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from utils import yaml_load
-#=========================================================
-# Stereo 3D reconstruction 
-#=========================================================
-VERSION = 13
-SET = 1
 
-calib1_file = 'CHESSBOARD/CAM1_calib_v2.yaml'
-calib2_file = 'CHESSBOARD/CAM2_calib_v2.yaml'
+# Check for left and right camera IDs
+# These values can change depending on the system
+CamL_id = 0 # Camera ID for left camera
+CamR_id = 2 # Camera ID for right camera
 
-K1 = np.array(yaml_load(calib1_file, 'camera_matrix'))
-dist1 = np.array(yaml_load(calib1_file, 'dist_coeff'))
+CamL= cv2.VideoCapture(CamL_id)
+CamR= cv2.VideoCapture(CamR_id)
 
-K2 = np.array(yaml_load(calib2_file, 'camera_matrix'))
-dist2 = np.array(yaml_load(calib2_file, 'dist_coeff'))
-img1_path = f'3D_v{VERSION}/set{SET}/cam1.jpg'
-img2_path = f'3D_v{VERSION}/set{SET}/cam2.jpg'
-#Load pictures
-imgL = cv2.imread(img1_path, cv2.IMREAD_GRAYSCALE) 
-imgR = cv2.imread(img2_path, cv2.IMREAD_GRAYSCALE) 
-cv2.imshow('imgL', imgL)
-cv2.waitKey(0)
+# Reading the mapping values for stereo image rectification
+# cv_file = cv2.FileStorage("data/stereo_rectify_maps.xml", cv2.FILE_STORAGE_READ)
+# Left_Stereo_Map_x = cv_file.getNode("Left_Stereo_Map_x").mat()
+# Left_Stereo_Map_y = cv_file.getNode("Left_Stereo_Map_y").mat()
+# Right_Stereo_Map_x = cv_file.getNode("Right_Stereo_Map_x").mat()
+# Right_Stereo_Map_y = cv_file.getNode("Right_Stereo_Map_y").mat()
+# cv_file.release()
 
-def get_keypoints_and_descriptors(imgL, imgR):
-    """Use ORB detector and FLANN matcher to get keypoints, descritpors,
-    and corresponding matches that will be good for computing
-    homography.
-    """
-    orb = cv2.ORB_create()
-    kp1, des1 = orb.detectAndCompute(imgL, None)
-    kp2, des2 = orb.detectAndCompute(imgR, None)
+def nothing(x):
+    pass
 
-    ############## Using FLANN matcher ##############
-    # Each keypoint of the first image is matched with a number of
-    # keypoints from the second image. k=2 means keep the 2 best matches
-    # for each keypoint (best matches = the ones with the smallest
-    # distance measurement).
-    FLANN_INDEX_LSH = 6
-    index_params = dict(
-        algorithm=FLANN_INDEX_LSH,
-        table_number=6,  # 12
-        key_size=12,  # 20
-        multi_probe_level=1,
-    )  # 2
-    search_params = dict(checks=50)  # or pass empty dictionary
-    flann = cv2.FlannBasedMatcher(index_params, search_params)
-    flann_match_pairs = flann.knnMatch(des1, des2, k=2)
-    return kp1, des1, kp2, des2, flann_match_pairs
+cv2.namedWindow('disp',cv2.WINDOW_NORMAL)
+cv2.resizeWindow('disp',600,600)
 
+cv2.createTrackbar('numDisparities','disp',1,17,nothing)
+cv2.createTrackbar('blockSize','disp',5,50,nothing)
+cv2.createTrackbar('preFilterType','disp',1,1,nothing)
+cv2.createTrackbar('preFilterSize','disp',2,25,nothing)
+cv2.createTrackbar('preFilterCap','disp',5,62,nothing)
+cv2.createTrackbar('textureThreshold','disp',10,100,nothing)
+cv2.createTrackbar('uniquenessRatio','disp',15,100,nothing)
+cv2.createTrackbar('speckleRange','disp',0,100,nothing)
+cv2.createTrackbar('speckleWindowSize','disp',3,25,nothing)
+cv2.createTrackbar('disp12MaxDiff','disp',5,25,nothing)
+cv2.createTrackbar('minDisparity','disp',5,25,nothing)
 
-def lowes_ratio_test(matches, ratio_threshold=0.6):
-    """Filter matches using the Lowe's ratio test.
+# Creating an object of StereoBM algorithm
+stereo = cv2.StereoBM_create()
 
-    The ratio test checks if matches are ambiguous and should be
-    removed by checking that the two distances are sufficiently
-    different. If they are not, then the match at that keypoint is
-    ignored.
+while True:
 
-    https://stackoverflow.com/questions/51197091/how-does-the-lowes-ratio-test-work
-    """
-    filtered_matches = []
-    for m, n in matches:
-        if m.distance < ratio_threshold * n.distance:
-            filtered_matches.append(m)
-    return filtered_matches
+    # Capturing and storing left and right camera images
+    retL, imgL= CamL.read()
+    retR, imgR= CamR.read()
+    
+    # Proceed only if the frames have been captured
+    if retL and retR:
+        imgR_gray = cv2.cvtColor(imgR,cv2.COLOR_BGR2GRAY)
+        imgL_gray = cv2.cvtColor(imgL,cv2.COLOR_BGR2GRAY)
 
+     
+        # # Applying stereo image rectification on the left image
+        # Left_nice = cv2.remap(imgL_gray,
+        #                     Left_Stereo_Map_x,
+        #                     Left_Stereo_Map_y,
+        #                     cv2.INTER_LANCZOS4,
+        #                     cv2.BORDER_CONSTANT,
+        #                     0)
+        
+        # # Applying stereo image rectification on the right image
+        # Right_nice= cv2.remap(imgR_gray,
+        #                     Right_Stereo_Map_x,
+        #                     Right_Stereo_Map_y,
+        #                     cv2.INTER_LANCZOS4,
+        #                     cv2.BORDER_CONSTANT,
+        #                     0)
 
-def draw_matches(imgL, imgR, kp1, des1, kp2, des2, flann_match_pairs):
-    """Draw the first 8 mathces between the left and right images."""
-    # https://docs.opencv.org/4.2.0/d4/d5d/group__features2d__draw.html
-    # https://docs.opencv.org/2.4/modules/features2d/doc/common_interfaces_of_descriptor_matchers.html
-    img = cv2.drawMatches(
-        imgL,
-        kp1,
-        imgR,
-        kp2,
-        flann_match_pairs[:8],
-        None,
-        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
-    )
-    cv2.imshow("Matches", img)
-    cv2.imwrite("ORB_FLANN_Matches.png", img)
-    cv2.waitKey(0)
+        Left_nice = imgL_gray
+        Right_nice = imgR_gray
 
+        # Updating the parameters based on the trackbar positions
+        numDisparities = cv2.getTrackbarPos('numDisparities','disp')*16
+        blockSize = cv2.getTrackbarPos('blockSize','disp')*2 + 5
+        preFilterType = cv2.getTrackbarPos('preFilterType','disp')
+        preFilterSize = cv2.getTrackbarPos('preFilterSize','disp')*2 + 5
+        preFilterCap = cv2.getTrackbarPos('preFilterCap','disp')
+        textureThreshold = cv2.getTrackbarPos('textureThreshold','disp')
+        uniquenessRatio = cv2.getTrackbarPos('uniquenessRatio','disp')
+        speckleRange = cv2.getTrackbarPos('speckleRange','disp')
+        speckleWindowSize = cv2.getTrackbarPos('speckleWindowSize','disp')*2
+        disp12MaxDiff = cv2.getTrackbarPos('disp12MaxDiff','disp')
+        minDisparity = cv2.getTrackbarPos('minDisparity','disp')
+        
+        # Setting the updated parameters before computing disparity map
+        stereo.setNumDisparities(numDisparities)
+        stereo.setBlockSize(blockSize)
+        stereo.setPreFilterType(preFilterType)
+        stereo.setPreFilterSize(preFilterSize)
+        stereo.setPreFilterCap(preFilterCap)
+        stereo.setTextureThreshold(textureThreshold)
+        stereo.setUniquenessRatio(uniquenessRatio)
+        stereo.setSpeckleRange(speckleRange)
+        stereo.setSpeckleWindowSize(speckleWindowSize)
+        stereo.setDisp12MaxDiff(disp12MaxDiff)
+        stereo.setMinDisparity(minDisparity)
 
-def compute_fundamental_matrix(matches, kp1, kp2, method=cv2.FM_RANSAC):
-    """Use the set of good mathces to estimate the Fundamental Matrix.
+        # Calculating disparity using the StereoBM algorithm
+        disparity = stereo.compute(Left_nice,Right_nice)
+        # NOTE: Code returns a 16bit signed single channel image,
+        # CV_16S containing a disparity map scaled by 16. Hence it 
+        # is essential to convert it to CV_32F and scale it down 16 times.
 
-    See  https://en.wikipedia.org/wiki/Eight-point_algorithm#The_normalized_eight-point_algorithm
-    for more info.
-    """
-    pts1, pts2 = [], []
-    fundamental_matrix, inliers = None, None
-    for m in matches[:8]:
-        pts1.append(kp1[m.queryIdx].pt)
-        pts2.append(kp2[m.trainIdx].pt)
-    if pts1 and pts2:
-        # You can play with the Threshold and confidence values here
-        # until you get something that gives you reasonable results. I
-        # used the defaults
-        fundamental_matrix, inliers = cv2.findFundamentalMat(
-            np.float32(pts1),
-            np.float32(pts2),
-            method=method,
-            # ransacReprojThreshold=3,
-            # confidence=0.99,
-        )
-    return fundamental_matrix, inliers, pts1, pts2
+        # Converting to float32 
+        disparity = disparity.astype(np.float32)
 
+        # Scaling down the disparity values and normalizing them 
+        disparity = (disparity/16.0 - minDisparity)/numDisparities
 
+        # Displaying the disparity map
+        cv2.imshow("disp",disparity)
 
-############## Find good keypoints to use ##############
-kp1, des1, kp2, des2, flann_match_pairs = get_keypoints_and_descriptors(imgL, imgR)
-good_matches = lowes_ratio_test(flann_match_pairs, 0.2)
-print('good matches flann', len(good_matches))
-draw_matches(imgL, imgR, kp1, des1, kp2, des2, good_matches)
-
-
-############## Compute Fundamental Matrix ##############
-F, I, points1, points2 = compute_fundamental_matrix(good_matches, kp1, kp2)
-print('F: ', F)
-print("I: ", I)
-print(len(points1), len(points2))
-
-############## Stereo rectify uncalibrated ##############
-h1, w1 = imgL.shape
-h2, w2 = imgR.shape
-thresh = 0
-_, H1, H2 = cv2.stereoRectifyUncalibrated(
-    np.float32(points1), np.float32(points2), F, imgSize=(w1, h1), threshold=thresh,
-)
-
-############## Undistort (Rectify) ##############
-imgL_undistorted = cv2.warpPerspective(imgL, H1, (w1, h1))
-imgR_undistorted = cv2.warpPerspective(imgR, H2, (w2, h2))
-cv2.imwrite("undistorted_L.png", imgL_undistorted)
-cv2.imwrite("undistorted_R.png", imgR_undistorted)
-
-############## Calculate Disparity (Depth Map) ##############
-
-# Using StereoBM
-stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
-disparity_BM = stereo.compute(imgL_undistorted, imgR_undistorted)
-plt.imshow(disparity_BM, "gray")
-plt.colorbar()
-plt.show()
-
-# Using StereoSGBM
-# Set disparity parameters. Note: disparity range is tuned according to
-#  specific parameters obtained through trial and error.
-win_size = 2
-min_disp = -4
-max_disp = 9
-num_disp = max_disp - min_disp  # Needs to be divisible by 16
-stereo = cv2.StereoSGBM_create(
-    minDisparity=min_disp,
-    numDisparities=num_disp,
-    blockSize=5,
-    uniquenessRatio=5,
-    speckleWindowSize=5,
-    speckleRange=5,
-    disp12MaxDiff=2,
-    P1=8 * 3 * win_size ** 2,
-    P2=32 * 3 * win_size ** 2,
-)
-disparity_SGBM = stereo.compute(imgL_undistorted, imgR_undistorted)
-plt.imshow(disparity_SGBM, "gray")
-plt.colorbar()
-plt.show()
+        # Close window using esc key
+        if cv2.waitKey(1) == 27:
+            break
+    
+    else:
+        CamL= cv2.VideoCapture(CamL_id)
+        CamR= cv2.VideoCapture(CamR_id)

@@ -73,9 +73,9 @@ h,w = img2.shape[:2]
 K1, roi1 = cv2.getOptimalNewCameraMatrix(K1,dist1,(w,h),1,(w,h))
 K2, roi2 = cv2.getOptimalNewCameraMatrix(K2,dist2,(w,h),1,(w,h))
 
-# #Undistort images
-# img1 = cv2.undistort(img1, K1, dist1, None, K1)
-# img2 = cv2.undistort(img2, K2, dist2, None, K2)
+#Undistort images
+img1 = cv2.undistort(img1, K1, dist1, None, K1)
+img2 = cv2.undistort(img2, K2, dist2, None, K2)
 
 # cv2.imshow('img1', img1)
 # cv2.waitKey(0)
