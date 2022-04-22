@@ -88,56 +88,15 @@ if __name__ == '__main__':
         # cv2.imshow('right(R)', rightFrame)
         # cv2.imshow('Disparity', disparity_image)
 
-        plt.imshow(disparity_image, cmap='plasma')
-        plt.colorbar()
-        plt.show()
+        # plt.imshow(disparity_image, cmap='plasma')
+        # plt.colorbar()
+        # plt.show()
 
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # Get key to stop stream. Press q for exit
-            break
+        B = 13 
+        focal_length = 1391.5 # focal length 
 
-
-        # # B: 13 cm = 0.13 M
-        # B = 13 
-        # focal_length = 1391.5 # focal length 
-
-        # depth = B*focal_length / disparity_image
-
-        # concat[]
-
-        # cv2.imshow('Depth', depth)
-        # cv2.waitKey(0)
-
-       
-
-     
-
-        # depth_map = np.zeros_like(disparity_image)
-        # print('depth map shape', depth_map.shape)
-        # print('B: ', B, 'focal length: ', focal_length)
-        # for i in range(height):
-        #     for j in range(width):
-        #         try:
-        #             depth_map[i][j] = (B*focal_length) / disparity_image[i][j]
-        #         except:
-        #             depth_map[i][j] = 0
-
-
-        # points_3D = cv2.reprojectImageTo3D(disparity_image, Q2)
-        # #Get color points
-        # colors = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
-        # #Get rid of points with value 0 (i.e no depth)
-        # mask_map = disparity_image > disparity_image.min()
-        # #Mask colors and points. 
-        # output_points = points_3D[mask_map]
-        # output_colors = colors[mask_map]
-        # #Define name for output file
-        # output_file = 'reconstructed.ply'
-        # #Generate point cloud 
-        # print ("\n Creating the output file... \n")
-        # create_output(output_points, output_colors, output_file)
-
-
+        depth = B*focal_length / disparity_image
 
 
 
