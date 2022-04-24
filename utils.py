@@ -74,3 +74,15 @@ def create_output(vertices, colors, filename):
 	with open(filename, 'w') as f:
 		f.write(ply_header %dict(vert_num=len(vertices)))
 		np.savetxt(f,vertices,'%f %f %f %d %d %d')
+
+
+    
+#Function that Downsamples image x number (reduce_factor) of times. 
+def downsample_image(img, scale_percent):
+    width = int(img.shape[1] * scale_percent)
+    height = int(img.shape[0] * scale_percent)
+    dim = (width, height)
+    
+    # resize image
+    resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+    return resized
