@@ -111,10 +111,10 @@ def generate_depth_map(imgL, imgR):
 
     filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX);
     filteredImg = np.uint8(filteredImg)
+    filteredImg = cv2.applyColorMap(filteredImg, cv2.COLORMAP_JET)
     # cv2.imshow('Disparity Map', filteredImg)
-    # filteredImg = cv2.applyColorMap(filteredImg, cv2.COLORMAP_JET)
 
-
+    
     return filteredImg
 
 
@@ -139,6 +139,8 @@ if __name__ == '__main__':
 
         _, leftFrame = cap_left.retrieve()
         _, rightFrame = cap_right.retrieve()
+
+        
         height, width, channel = leftFrame.shape  # We will use the shape for remap
 
         # K1, D1, R1, P1,
@@ -149,7 +151,11 @@ if __name__ == '__main__':
         rightMapX, rightMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
         right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
-
+        left_rectified =cv2.flip(left_rectified, 0)
+        right_rectified =cv2.flip(right_rectified, 0)
+        # cv2.imshow('left rec', left_rectified)
+        # cv2.waitKey(0)
+        # exit(-1)
         # # We need grayscale for disparity map.
         gray_left = cv2.cvtColor(left_rectified, cv2.COLOR_BGR2GRAY)
         gray_right = cv2.cvtColor(right_rectified, cv2.COLOR_BGR2GRAY)
@@ -159,11 +165,11 @@ if __name__ == '__main__':
         # imgR = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR)
 
 
-        stacked = np.hstack((gray_left, gray_right))
+        # stacked = np.hstack((gray_left, gray_right))
         # cv2.imshow('stacked', stacked)
         # cv2.waitKey(0)
         # exit(-1)
-        # 
+        
         
 
         disparity_image = gen_depth_map(gray_left, gray_right)
@@ -196,7 +202,7 @@ if __name__ == '__main__':
         # cv2.imshow('left(R)', leftFrame)
         # cv2.imshow('right(R)', rightFrame)
         
-        # print(disparity_image)
+        print(disparity_image)
         # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
         # plt.show()
@@ -207,8 +213,8 @@ if __name__ == '__main__':
         B = -1/Q[3][2]
         F = Q[2][3]
 
-        # print('B', B, 'F', F, 'BF', B*F)
-        depth = B * F / disparity_image
+        print('B', B, 'F', F, 'BF', B*F)
+        depth = - (B * F / disparity_image)#/ 100 # meteres
 
 
         ''' Label depths for select points '''
@@ -222,9 +228,9 @@ if __name__ == '__main__':
         for center in centers:
 
             center_depth = depth[center[0]][center[1]]
-            cv2.circle(disparity_image, center, 15, (0, 255, 0), -1)
+            cv2.circle(disparity_image, center, 15, (255,255,255), -1)
             cv2.putText(disparity_image, str(center_depth), center, cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0,255, 0), 2, cv2.LINE_AA)
+                    1, (255,255,255), 2, cv2.LINE_AA)
 
         cv2.imshow('Disparity', disparity_image)
         cv2.waitKey(1)
@@ -241,7 +247,7 @@ if __name__ == '__main__':
         ''' Calc depth from reproject3D'''
         # depth = cv2.reprojectImageTo3D(disparity_image, Q)
 
-        hist, bins = np.histogram(depth, bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90,100 ])
+        hist, bins = np.histogram(depth, bins = [0, 50, 100, 200,  500, 1000, 2500, 5000])
         print(hist)
         print(bins)
         
