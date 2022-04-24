@@ -20,7 +20,7 @@ property uchar blue
 end_header
 '''
 
-VERSION = 18
+VERSION = 19
 
 def write_ply(fn, verts, colors):
     verts = verts.reshape(-1, 3)
@@ -145,28 +145,28 @@ if __name__ == '__main__':
         # 
 
         leftMapX, leftMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
-        # left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
         rightMapX, rightMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
-        # right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
 
         # # We need grayscale for disparity map.
-        # gray_left = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2GRAY)
-        # gray_right = cv2.cvtColor(rightFrame, cv2.COLOR_BGR2GRAY)
+        gray_left = cv2.cvtColor(left_rectified, cv2.COLOR_BGR2GRAY)
+        gray_right = cv2.cvtColor(right_rectified, cv2.COLOR_BGR2GRAY)
 
 
-        imgL = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR)
-        imgR = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR)
+        # imgL = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR)
+        # imgR = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR)
 
 
-        # stacked = np.hstack((imgL, imgR))
+        stacked = np.hstack((gray_left, gray_right))
         # cv2.imshow('stacked', stacked)
         # cv2.waitKey(0)
         # exit(-1)
         # 
         
 
-        disparity_image = gen_depth_map(imgL,imgR)
+        disparity_image = gen_depth_map(gray_left, gray_right)
 
 
         print('generating 3d point cloud...',)
@@ -211,10 +211,10 @@ if __name__ == '__main__':
         depth = B * F / disparity_image
 
 
+        ''' Label depths for select points '''
         # center (width/2, height/2)
         centers = []
         centers.append([disparity_image.shape[1] // 2, disparity_image.shape[0] // 4])
-
         centers.append([disparity_image.shape[1] // 2, disparity_image.shape[0] // 2])
         centers.append([disparity_image.shape[1] // 4, disparity_image.shape[0] // 2])
 

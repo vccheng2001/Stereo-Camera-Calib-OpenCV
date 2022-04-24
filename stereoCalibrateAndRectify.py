@@ -11,7 +11,7 @@ image_size = None
 np.set_printoptions(suppress=True)
 
 
-VERSION = 18
+VERSION = 19
 
 w, h = 1920, 1080
 def stereo_calibrate():

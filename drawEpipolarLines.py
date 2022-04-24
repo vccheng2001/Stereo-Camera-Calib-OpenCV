@@ -65,7 +65,7 @@ def drawLines(img, lines, colors):
 
 if __name__ == '__main__':
 
-    VERSION = 18
+    VERSION = 19
     path = f"CHESSBOARD_TWOCAMS_v{VERSION}/"
     # imgL_path = os.path.join(path, f"CAM2_imgs_v{VERSION}/30.jpg")
     # imgR_path = os.path.join(path, f"CAM1_imgs_v{VERSION}/30.jpg")
