@@ -6,7 +6,7 @@ save = True
 video_capture_1 = cv2.VideoCapture(2) # right cam (CAM 1)
 video_capture_2 = cv2.VideoCapture(0) # left cam (CAM 2)
 
-VERSION = 18
+VERSION = 19
 TYPE = f"CHESSBOARD_TWOCAMS_v{VERSION}"
 
 print(f'****** CAPTURING TWO VIDEOS FOR {TYPE} *********\n')

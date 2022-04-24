@@ -67,8 +67,10 @@ if __name__ == '__main__':
 
     VERSION = 18
     path = f"CHESSBOARD_TWOCAMS_v{VERSION}/"
-    imgL_path = os.path.join(path, f"CAM2_imgs_v{VERSION}/30.jpg")
-    imgR_path = os.path.join(path, f"CAM1_imgs_v{VERSION}/30.jpg")
+    # imgL_path = os.path.join(path, f"CAM2_imgs_v{VERSION}/30.jpg")
+    # imgR_path = os.path.join(path, f"CAM1_imgs_v{VERSION}/30.jpg")
+    imgL_path = os.path.join(path, f"CAM2_imgs_v{VERSION}/10.jpg")
+    imgR_path = os.path.join(path, f"CAM1_imgs_v{VERSION}/10.jpg")
 
     K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q = load_stereo_coefficients(f'outputs/calib_v{VERSION}.txt')  # Get cams params
     print(f'K1:{K1},\n D1:{D1}\n')

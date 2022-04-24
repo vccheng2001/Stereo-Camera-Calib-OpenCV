@@ -161,9 +161,9 @@ if __name__ == '__main__':
 
         # stacked = np.hstack((imgL, imgR))
         # cv2.imshow('stacked', stacked)
-        # cv2.waitKey(1000)
+        # cv2.waitKey(0)
         # exit(-1)
-        
+        # 
         
 
         disparity_image = gen_depth_map(imgL,imgR)
@@ -195,8 +195,7 @@ if __name__ == '__main__':
         # Show the images
         # cv2.imshow('left(R)', leftFrame)
         # cv2.imshow('right(R)', rightFrame)
-        cv2.imshow('Disparity', disparity_image)
-        cv2.waitKey(1)
+        
         # print(disparity_image)
         # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
@@ -208,10 +207,32 @@ if __name__ == '__main__':
         B = -1/Q[3][2]
         F = Q[2][3]
 
-        print('B', B, 'F', F, 'BF', B*F)
+        # print('B', B, 'F', F, 'BF', B*F)
         depth = B * F / disparity_image
 
-        print('deepp', depth[1080//2-1][1920//2-1])
+
+        # center (width/2, height/2)
+        centers = []
+        centers.append([disparity_image.shape[1] // 2, disparity_image.shape[0] // 4])
+
+        centers.append([disparity_image.shape[1] // 2, disparity_image.shape[0] // 2])
+        centers.append([disparity_image.shape[1] // 4, disparity_image.shape[0] // 2])
+
+
+        for center in centers:
+
+            center_depth = depth[center[0]][center[1]]
+            cv2.circle(disparity_image, center, 15, (0, 255, 0), -1)
+            cv2.putText(disparity_image, str(center_depth), center, cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0,255, 0), 2, cv2.LINE_AA)
+
+        cv2.imshow('Disparity', disparity_image)
+        cv2.waitKey(1)
+   
+        
+
+
+        # print('deepp', depth[1080//2-1][1920//2-1])
 
         # print(K1)
         # print(K2)
