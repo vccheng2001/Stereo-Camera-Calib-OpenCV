@@ -29,6 +29,10 @@ def stereo_calibrate():
     flag |= cv2.CALIB_USE_INTRINSIC_GUESS
     ret, K1, D1, K2, D2, R, T, E, F = cv2.stereoCalibrate(objp, rightp, leftp, K1, D1, K2, D2, image_size)
     print("Stereo calibration rms: ", ret)
+
+    # https://amroamroamro.github.io/mexopencv/matlab/cv.stereoRectify.html
+    # Computes rectification transforms for each head of a calibrated stereo camera
+
     R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=0.9)
 
     save_stereo_coefficients('outputs/calib.txt', K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q)

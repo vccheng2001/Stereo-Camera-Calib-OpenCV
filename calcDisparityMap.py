@@ -30,11 +30,17 @@ def write_ply(fn, verts, colors):
 def generate_depth_map(imgL, imgR):
     """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
     # SGBM Parameters -----------------
-    window_size = 5  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
+    window_size = 5 # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
 
+
+    '''
+    The maximum number of disparities refers to the number of pixels the camera will search across when trying to find matches.
+    Limiting the maximum disparities has the advantage of increasing the frame rate because it reduces the search space. 
+
+    '''
     left_matcher = cv2.StereoSGBM_create(
         minDisparity=-1,
-        numDisparities=5*16,  # max_disp has to be dividable by 16 f. E. HH 192, 256
+        numDisparities=360,  # max_disp has to be dividable by 16 f. E. HH 192, 256
         blockSize=window_size,
         P1=8 * 3 * window_size,
         # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
@@ -48,9 +54,18 @@ def generate_depth_map(imgL, imgR):
     )
     right_matcher = cv2.ximgproc.createRightMatcher(left_matcher)
     # FILTER Parameters
+
+    '''
+    Lambda is a parameter defining the amount of regularization during filtering. 
+    Larger values force filtered disparity map edges to adhere more to source image edges. Typical value is 8000.
+
+
+    SigmaColor is a parameter defining how sensitive the filtering process is to source image edges. 
+    Large values can lead to disparity leakage through low-contrast edges. Small values can make the 
+    filter too sensitive to noise and textures in the source image. Typical values range from 0.8 to 2.0.
+    '''
     lmbda = 80000
-    sigma = 1.3
-    visual_multiplier = 6
+    sigma = 1
 
     wls_filter = cv2.ximgproc.createDisparityWLSFilter(matcher_left=left_matcher)
     wls_filter.setLambda(lmbda)
@@ -63,7 +78,7 @@ def generate_depth_map(imgL, imgR):
     filteredImg = wls_filter.filter(displ, imgL, None, dispr)  # important to put "imgL" here!!!
 
     filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX)
-    filteredImg = np.uint8(filteredImg)
+    filteredImg = np.uint8(filteredImg) - 128
 
     # filteredImg = cv2.applyColorMap(filteredImg, cv2.COLORMAP_JET)
 
@@ -140,7 +155,7 @@ if __name__ == '__main__':
         # cv2.imshow('left(R)', leftFrame)
         # cv2.imshow('right(R)', rightFrame)
         cv2.imshow('Disparity', disparity_image)
-        cv2.waitKey(50)
+        cv2.waitKey(1)
         # print(disparity_image)
         # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
@@ -156,7 +171,7 @@ if __name__ == '__main__':
 
 
 
-        print(depth)
+        # print(depth)
 
 
 
