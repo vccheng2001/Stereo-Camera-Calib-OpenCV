@@ -10,7 +10,7 @@ criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 image_size = None
 
 
-VERSION = 14
+VERSION = 16
 def stereo_calibrate():
     """ Stereo calibration and rectification """
     objp, leftp, rightp = load_image_points()
@@ -104,7 +104,7 @@ def load_image_points():
             corners2_left = cv2.cornerSubPix(gray_left, corners_left, (5, 5), (-1, -1), criteria)
             left_imgpoints.append(corners2_left)
         else:
-            print("Chessboard couldn't detected. Image pair: ", left_im, " and ", right_im)
+            print("Chessboard couldn't be detected. Image pair: ", left_im, " and ", right_im)
             continue
 
     image_size = gray_right.shape  # If you have no acceptable pair, you may have an error here.

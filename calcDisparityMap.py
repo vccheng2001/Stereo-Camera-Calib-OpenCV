@@ -4,10 +4,33 @@ import argparse
 import sys
 from utils import load_stereo_coefficients, create_output
 import matplotlib.pyplot as plt
+
+
+
+ply_header = '''ply
+format ascii 1.0
+element vertex %(vert_num)d
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header
+'''
+
+def write_ply(fn, verts, colors):
+    verts = verts.reshape(-1, 3)
+    colors = colors.reshape(-1, 3)
+    verts = np.hstack([verts, colors])
+    with open(fn, 'wb') as f:
+        f.write((ply_header % dict(vert_num=len(verts))).encode('utf-8'))
+        np.savetxt(f, verts, fmt='%f %f %f %d %d %d ')
+
 def generate_depth_map(imgL, imgR):
     """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
     # SGBM Parameters -----------------
-    window_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
+    window_size = 5  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
 
     left_matcher = cv2.StereoSGBM_create(
         minDisparity=-1,
@@ -84,7 +107,28 @@ if __name__ == '__main__':
         gray_left = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2GRAY)
         gray_right = cv2.cvtColor(rightFrame, cv2.COLOR_BGR2GRAY)
 
+
+        
+
         disparity_image = generate_depth_map(gray_left, gray_right) # Get the disparity map
+
+
+        print('generating 3d point cloud...',)
+        # f = 0.8*width#     i                     # guess for focal length
+        # Q = np.float32([[1, 0, 0, -0.5*width],
+        #                 [0,-1, 0,  0.5*height], # turn points 180 deg around x-axis,
+        #                 [0, 0, 0,     -f], # so that y-axis looks up
+        #                 [0, 0, 1,      0]])
+        # points = cv2.reprojectImageTo3D(disparity_image, Q)
+        # colors = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2RGB)
+        # # mask = disparity_image > disparity_image.min()
+        # out_points = points#[mask]
+        # out_colors = colors#[mask]
+        # out_fn = 'out.ply'
+        # write_ply(out_fn, out_points, out_colors)
+        # print('%s saved' % out_fn)
+
+
 
         # k  = cv2.waitKey(10000)
 
@@ -97,8 +141,8 @@ if __name__ == '__main__':
         # cv2.imshow('right(R)', rightFrame)
         cv2.imshow('Disparity', disparity_image)
         cv2.waitKey(50)
-        print(disparity_image)
-        # plt.imshow(disparity_image, cmap='plasma')
+        # print(disparity_image)
+        # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
         # plt.show()
 
