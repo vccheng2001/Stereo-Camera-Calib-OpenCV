@@ -20,6 +20,8 @@ property uchar blue
 end_header
 '''
 
+VERSION = 18
+
 def write_ply(fn, verts, colors):
     verts = verts.reshape(-1, 3)
     colors = colors.reshape(-1, 3)
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     cap_right = cv2.VideoCapture(2)
    
 
-    K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q = load_stereo_coefficients('outputs/calib.txt')  # Get cams params
+    K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q = load_stereo_coefficients(f'outputs/calib_v{VERSION}.txt')  # Get cams params
 
     if not cap_left.isOpened() and not cap_right.isOpened():  # If we can't get images from both sources, error
         print("Can't open the streams!")
@@ -144,25 +146,35 @@ if __name__ == '__main__':
         # cv2.imshow('left(R)', leftFrame)
         # cv2.imshow('right(R)', rightFrame)
         cv2.imshow('Disparity', disparity_image)
-        cv2.waitKey(1)
+        cv2.waitKey(10000)
         # print(disparity_image)
         # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
         # plt.show()
 
         # ''' Calc depth from B*F/disparity'''
-        # B = 13
-        # F = 1391.5
-        # depth = B * F / disparity_image
 
+        
+        B = -1/Q[3][2]
+        F = Q[2][3]
+        depth = B * F / disparity_image
+
+        # print(K1)
+        # print(K2)
         # print('Q', Q)
         # exit(-1)
         ''' Calc depth from reproject3D'''
-        depth = cv2.reprojectImageTo3D(disparity_image, Q)
+        # depth = cv2.reprojectImageTo3D(disparity_image, Q)
+
+        hist, bins = np.histogram(depth, bins = [20, 25, 30, 35, 40, 45 ])
+        print(hist)
+        print(bins)
+        
 
 
 
-        print(depth)
+
+        # print(depth)
 
 
 

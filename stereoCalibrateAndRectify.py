@@ -8,9 +8,10 @@ from utils import save_stereo_coefficients
 # termination criteria
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 image_size = None
+np.set_printoptions(suppress=True)
 
 
-VERSION = 16
+VERSION = 18
 def stereo_calibrate():
     """ Stereo calibration and rectification """
     objp, leftp, rightp = load_image_points()
@@ -33,9 +34,14 @@ def stereo_calibrate():
     # https://amroamroamro.github.io/mexopencv/matlab/cv.stereoRectify.html
     # Computes rectification transforms for each head of a calibrated stereo camera
 
-    R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=0)
+    R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=1)
 
-    save_stereo_coefficients('outputs/calib.txt', K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q)
+
+
+    print("K1", K1)
+    print("K2", K2)
+    print("Q", Q)
+    save_stereo_coefficients(f'outputs/calib_v{VERSION}.txt', K1, D1, K2, D2, R, T, E, F, R1, R2, P1, P2, Q)
 
 
 def load_image_points():
