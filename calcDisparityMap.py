@@ -30,6 +30,47 @@ def write_ply(fn, verts, colors):
         f.write((ply_header % dict(vert_num=len(verts))).encode('utf-8'))
         np.savetxt(f, verts, fmt='%f %f %f %d %d %d ')
 
+def gen_depth_map(imgL, imgR):
+
+    # SGBM Parameters 
+    window_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
+    left_matcher = cv2.StereoSGBM_create(
+        minDisparity=-1,
+        numDisparities=360,  # max_disp has to be dividable by 16 f. E. HH 192, 256
+        blockSize=5,
+        P1=8 * 3 * window_size ** 2,
+        # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
+        P2=32 * 3 * window_size ** 2,
+        disp12MaxDiff=1,
+        uniquenessRatio=15,
+        speckleWindowSize=0,
+        speckleRange=2,
+        preFilterCap=63,
+        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
+    )
+    right_matcher = cv2.ximgproc.createRightMatcher(left_matcher)
+    # FILTER Parameters
+    lmbda = 80000
+    sigma = 1.2
+    visual_multiplier = 1.0
+    # Weighted least squares filter to fill sparse (unpopulated) areas of the disparity map
+        # by aligning the images edges and propagating disparity values from high- to low-confidence regions
+    wls_filter = cv2.ximgproc.createDisparityWLSFilter(matcher_left=left_matcher)
+    wls_filter.setLambda(lmbda)
+    wls_filter.setSigmaColor(sigma)
+    # Get depth information/disparity map using SGBM
+    displ = left_matcher.compute(imgL, imgR)  # .astype(np.float32)/16
+    dispr = right_matcher.compute(imgR, imgL)  # .astype(np.float32)/16
+    displ = np.int16(displ)
+    dispr = np.int16(dispr)
+    filteredImg = wls_filter.filter(displ, imgL, None, dispr)  # important to put "imgL" here!!!
+    filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX);
+    filteredImg = np.uint8(filteredImg)
+
+    return filteredImg 
+
+
+
 def generate_depth_map(imgL, imgR):
     """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
     # SGBM Parameters -----------------
@@ -38,7 +79,7 @@ def generate_depth_map(imgL, imgR):
 
     left_matcher = cv2.StereoSGBM_create(
         minDisparity=0,
-        numDisparities=360,             # max_disp has to be dividable by 16 f. E. HH 192, 256
+        numDisparities=160,             # max_disp has to be dividable by 16 f. E. HH 192, 256
         blockSize=5,
         P1=8 * 3 * window_size ** 2,    # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
         P2=32 * 3 * window_size ** 2,
@@ -54,7 +95,7 @@ def generate_depth_map(imgL, imgR):
 
     # FILTER Parameters
     lmbda = 80000
-    sigma = 1.3
+    sigma = 1.5
     visual_multiplier = 1.0
 
     wls_filter = cv2.ximgproc.createDisparityWLSFilter(matcher_left=left_matcher)
@@ -103,20 +144,29 @@ if __name__ == '__main__':
         # K1, D1, R1, P1,
         # 
 
-        leftMapX, leftMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
-        left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
-        rightMapX, rightMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
-        right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        leftMapX, leftMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
+        # left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+        rightMapX, rightMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
+        # right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
 
-        # We need grayscale for disparity map.
-        gray_left = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2GRAY)
-        gray_right = cv2.cvtColor(rightFrame, cv2.COLOR_BGR2GRAY)
+        # # We need grayscale for disparity map.
+        # gray_left = cv2.cvtColor(leftFrame, cv2.COLOR_BGR2GRAY)
+        # gray_right = cv2.cvtColor(rightFrame, cv2.COLOR_BGR2GRAY)
 
 
+        imgL = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR)
+        imgR = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR)
+
+
+        # stacked = np.hstack((imgL, imgR))
+        # cv2.imshow('stacked', stacked)
+        # cv2.waitKey(1000)
+        # exit(-1)
+        
         
 
-        disparity_image = generate_depth_map(gray_left, gray_right) # Get the disparity map
+        disparity_image = gen_depth_map(imgL,imgR)
 
 
         print('generating 3d point cloud...',)
@@ -146,7 +196,7 @@ if __name__ == '__main__':
         # cv2.imshow('left(R)', leftFrame)
         # cv2.imshow('right(R)', rightFrame)
         cv2.imshow('Disparity', disparity_image)
-        cv2.waitKey(10000)
+        cv2.waitKey(1)
         # print(disparity_image)
         # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
@@ -157,7 +207,11 @@ if __name__ == '__main__':
         
         B = -1/Q[3][2]
         F = Q[2][3]
+
+        print('B', B, 'F', F, 'BF', B*F)
         depth = B * F / disparity_image
+
+        print('deepp', depth[1080//2-1][1920//2-1])
 
         # print(K1)
         # print(K2)
@@ -166,7 +220,7 @@ if __name__ == '__main__':
         ''' Calc depth from reproject3D'''
         # depth = cv2.reprojectImageTo3D(disparity_image, Q)
 
-        hist, bins = np.histogram(depth, bins = [20, 25, 30, 35, 40, 45 ])
+        hist, bins = np.histogram(depth, bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90,100 ])
         print(hist)
         print(bins)
         

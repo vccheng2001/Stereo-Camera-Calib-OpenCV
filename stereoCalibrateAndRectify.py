@@ -12,6 +12,8 @@ np.set_printoptions(suppress=True)
 
 
 VERSION = 18
+
+w, h = 1920, 1080
 def stereo_calibrate():
     """ Stereo calibration and rectification """
     objp, leftp, rightp = load_image_points()
@@ -34,7 +36,9 @@ def stereo_calibrate():
     # https://amroamroamro.github.io/mexopencv/matlab/cv.stereoRectify.html
     # Computes rectification transforms for each head of a calibrated stereo camera
 
-    R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=1)
+    R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=0.9)
+    K1,roi_right = cv2.getOptimalNewCameraMatrix(K1, D1,(w,h),0,(w,h))
+    K2,roi_left = cv2.getOptimalNewCameraMatrix(K2, D2,(w,h),0,(w,h))
 
 
 
@@ -87,6 +91,7 @@ def load_image_points():
     # Iterate through the pairs and find chessboard corners. Add them to arrays
     # If openCV can't find the corners in one image, we discard the pair.
     for left_im, right_im in pair_images:
+
         # Right Object Points
         right = cv2.imread(right_im)
         gray_right = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
