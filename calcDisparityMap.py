@@ -36,7 +36,7 @@ def gen_depth_map(imgL, imgR):
     window_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
     left_matcher = cv2.StereoSGBM_create(
         minDisparity=-1,
-        numDisparities=160,  # max_disp has to be dividable by 16 f. E. HH 192, 256
+        numDisparities=480,  # max_disp has to be dividable by 16 f. E. HH 192, 256
         blockSize=5,
         P1=8 * 3 * window_size ** 2,
         # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
