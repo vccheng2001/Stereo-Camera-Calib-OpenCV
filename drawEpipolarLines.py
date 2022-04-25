@@ -5,6 +5,8 @@ import numpy as np
 from utils import load_stereo_coefficients
 np.set_printoptions(suppress=True)
 import os
+
+VERSION = 22
 # find object corners from chessboard pattern  and create a correlation with image corners
 def getCorners(images, chessboard_size, show=True):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -65,7 +67,7 @@ def drawLines(img, lines, colors):
 
 if __name__ == '__main__':
 
-    VERSION = 19
+    
     path = f"CHESSBOARD_TWOCAMS_v{VERSION}/"
     # imgL_path = os.path.join(path, f"CAM2_imgs_v{VERSION}/30.jpg")
     # imgR_path = os.path.join(path, f"CAM1_imgs_v{VERSION}/30.jpg")

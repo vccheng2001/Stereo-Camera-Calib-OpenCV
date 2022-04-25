@@ -6,7 +6,7 @@ save = True
 video_capture_1 = cv2.VideoCapture(2) # right cam (CAM 1)
 video_capture_2 = cv2.VideoCapture(0) # left cam (CAM 2)
 
-VERSION = 19
+VERSION = 23
 TYPE = f"CHESSBOARD_TWOCAMS_v{VERSION}"
 
 print(f'****** CAPTURING TWO VIDEOS FOR {TYPE} *********\n')
@@ -47,10 +47,12 @@ while True:
     ret1, frame1 = video_capture_1.read()
     ret2, frame2 = video_capture_2.read()
 
+    
+
     if (ret1):
         # Display the resulting frame
         cv2.imshow('Cam 1', frame1)
-    if (ret2):
+    # if (ret2):
         # Display the resulting frame
         cv2.imshow('Cam 2', frame2)
 

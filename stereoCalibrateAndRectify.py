@@ -11,7 +11,7 @@ image_size = None
 np.set_printoptions(suppress=True)
 
 
-VERSION = 19
+VERSION = 23
 
 w, h = 1920, 1080
 def stereo_calibrate():
@@ -28,17 +28,21 @@ def stereo_calibrate():
     D2 = np.array(yaml_load(calib2_file, 'dist_coeff'))
 
     flag = 0
+    flag |= cv2.CALIB_USE_INTRINSIC_GUESS 
+    flag |= cv2.CALIB_FIX_FOCAL_LENGTH 
+    flag |= cv2.CALIB_FIX_PRINCIPAL_POINT
+
     # flag |= cv2.CALIB_FIX_INTRINSIC
-    flag |= cv2.CALIB_USE_INTRINSIC_GUESS
+    # flag |= cv2.CALIB_USE_INTRINSIC_GUESS
     ret, K1, D1, K2, D2, R, T, E, F = cv2.stereoCalibrate(objp, rightp, leftp, K1, D1, K2, D2, image_size)
     print("Stereo calibration rms: ", ret)
 
     # https://amroamroamro.github.io/mexopencv/matlab/cv.stereoRectify.html
     # Computes rectification transforms for each head of a calibrated stereo camera
 
-    R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=1.0)
-    # K1,roi_right = cv2.getOptimalNewCameraMatrix(K1, D1,(w,h),0,(w,h))
-    # K2,roi_left = cv2.getOptimalNewCameraMatrix(K2, D2,(w,h),0,(w,h))
+    R1, R2, P1, P2, Q, roi_left, roi_right = cv2.stereoRectify(K1, D1, K2, D2, image_size, R, T, flags=cv2.CALIB_ZERO_DISPARITY, alpha=1)
+    K1,roi_right = cv2.getOptimalNewCameraMatrix(K1, D1,(w,h),0,(w,h))
+    K2,roi_left = cv2.getOptimalNewCameraMatrix(K2, D2,(w,h),0,(w,h))
 
 
 
@@ -52,13 +56,13 @@ def load_image_points():
     global image_size
     width = 6
     height = 9
-    square_size = 0.04
+    square_size = 0.025
     pattern_size = (width, height)  # Chessboard size!
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(8,6,0)
     objp = np.zeros((height * width, 3), np.float32)
     objp[:, :2] = np.mgrid[0:width, 0:height].T.reshape(-1, 2)
 
-    # objp = objp * square_size  # Create real world coords. Use your metric.
+    objp = objp * square_size  # Create real world coords. Use your metric.
 
     # Arrays to store object points and image points from all the images.
     objpoints = []  # 3d point in real world space

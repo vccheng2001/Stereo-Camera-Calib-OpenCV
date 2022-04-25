@@ -20,7 +20,7 @@ property uchar blue
 end_header
 '''
 
-VERSION = 19
+VERSION = 23
 
 def write_ply(fn, verts, colors):
     verts = verts.reshape(-1, 3)
@@ -36,7 +36,7 @@ def gen_depth_map(imgL, imgR):
     window_size = 3  # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
     left_matcher = cv2.StereoSGBM_create(
         minDisparity=-1,
-        numDisparities=360,  # max_disp has to be dividable by 16 f. E. HH 192, 256
+        numDisparities=160,  # max_disp has to be dividable by 16 f. E. HH 192, 256
         blockSize=5,
         P1=8 * 3 * window_size ** 2,
         # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
@@ -67,55 +67,10 @@ def gen_depth_map(imgL, imgR):
     filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX);
     filteredImg = np.uint8(filteredImg)
 
+    # filteredImg = cv2.applyColorMap(filteredImg, cv2.COLORMAP_JET)
+
     return filteredImg 
 
-
-
-def generate_depth_map(imgL, imgR):
-    """ Depth map calculation. Works with SGBM and WLS. Need rectified images, returns depth map ( left to right disparity ) """
-    # SGBM Parameters -----------------
-    # SGBM Parameters -----------------
-    window_size = 3                     # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
-
-    left_matcher = cv2.StereoSGBM_create(
-        minDisparity=0,
-        numDisparities=160,             # max_disp has to be dividable by 16 f. E. HH 192, 256
-        blockSize=5,
-        P1=8 * 3 * window_size ** 2,    # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
-        P2=32 * 3 * window_size ** 2,
-        disp12MaxDiff=1,
-        uniquenessRatio=15,
-        speckleWindowSize=0,
-        speckleRange=2,
-        preFilterCap=63,
-        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY
-    )
-
-    right_matcher = cv2.ximgproc.createRightMatcher(left_matcher)
-
-    # FILTER Parameters
-    lmbda = 80000
-    sigma = 1.5
-    visual_multiplier = 1.0
-
-    wls_filter = cv2.ximgproc.createDisparityWLSFilter(matcher_left=left_matcher)
-    wls_filter.setLambda(lmbda)
-    wls_filter.setSigmaColor(sigma)
-
-    print('computing disparity...')
-    displ = left_matcher.compute(imgL, imgR)  # .astype(np.float32)/16
-    dispr = right_matcher.compute(imgR, imgL)  # .astype(np.float32)/16
-    displ = np.int16(displ)
-    dispr = np.int16(dispr)
-    filteredImg = wls_filter.filter(displ, imgL, None, dispr)  # important to put "imgL" here!!!
-
-    filteredImg = cv2.normalize(src=filteredImg, dst=filteredImg, beta=0, alpha=255, norm_type=cv2.NORM_MINMAX);
-    filteredImg = np.uint8(filteredImg)
-    filteredImg = cv2.applyColorMap(filteredImg, cv2.COLORMAP_JET)
-    # cv2.imshow('Disparity Map', filteredImg)
-
-    
-    return filteredImg
 
 
 if __name__ == '__main__':
@@ -140,25 +95,62 @@ if __name__ == '__main__':
         _, leftFrame = cap_left.retrieve()
         _, rightFrame = cap_right.retrieve()
 
+        # cv2.imshow('leftFrame', leftFrame)
+        # cv2.waitKey(0)
+        # exit(-1)
+
         
         height, width, channel = leftFrame.shape  # We will use the shape for remap
 
         # K1, D1, R1, P1,
         # 
 
+
+        '''
+        initUndistortRectifyMap function both undistorts and rectifies the images. 
+        For the left camera, we use K1(camera matrix) and D1(distortion matrix) to undistort 
+        and R1(left to right rotation) and P1(left to right projection matrix) to rectify.
+
+        After the transformation is given to remap, we’ll get the rectified images. 
+
+
+        What remap() does do is, for every pixel in the destination image,
+        lookup where it comes from in the source image, and then assigns an interpolated value.
+
+        At pixel (0, 0) in the new destination image, I look at map_x and map_y which tell me the location of the corresponding pixel
+        in the source image, and then I can assign an interpolated value at (0, 0) in the
+        destination image by looking at near values in the source. 
+
+
+        '''
+
         leftMapX, leftMapY = cv2.initUndistortRectifyMap(K2, D2, R2, P2, (width, height), cv2.CV_32FC1)
         left_rectified = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
         rightMapX, rightMapY = cv2.initUndistortRectifyMap(K1, D1, R1, P1, (width, height), cv2.CV_32FC1)
         right_rectified = cv2.remap(rightFrame, rightMapX, rightMapY, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
 
-        left_rectified =cv2.flip(left_rectified, 0)
-        right_rectified =cv2.flip(right_rectified, 0)
+        # left_rectified =cv2.flip(left_rectified, 0)
+        # right_rectified =cv2.flip(right_rectified, 0)
         # cv2.imshow('left rec', left_rectified)
         # cv2.waitKey(0)
         # exit(-1)
         # # We need grayscale for disparity map.
         gray_left = cv2.cvtColor(left_rectified, cv2.COLOR_BGR2GRAY)
         gray_right = cv2.cvtColor(right_rectified, cv2.COLOR_BGR2GRAY)
+
+        # h, w = gray_left.shape
+        # i, j = [h // 2, w // 2]
+        # print('orig center', i, j)
+        # ii = int(leftMapY[i][j])
+        # jj = int(leftMapX[i][j])
+
+        
+
+        # # print('leftMapX', leftMapX)
+        # cv2.circle(left_rectified, (ii,jj), 15, (255,255,0), -1)
+        # cv2.imshow('left rect',  left_rectified)
+        # cv2.waitKey(0)
+        # exit(-1)
 
 
         # imgL = cv2.remap(leftFrame, leftMapX, leftMapY, cv2.INTER_LINEAR)
@@ -175,7 +167,7 @@ if __name__ == '__main__':
         disparity_image = gen_depth_map(gray_left, gray_right)
 
 
-        print('generating 3d point cloud...',)
+        # print('generating 3d point cloud...',)
         # f = 0.8*width#     i                     # guess for focal length
         # Q = np.float32([[1, 0, 0, -0.5*width],
         #                 [0,-1, 0,  0.5*height], # turn points 180 deg around x-axis,
@@ -202,7 +194,7 @@ if __name__ == '__main__':
         # cv2.imshow('left(R)', leftFrame)
         # cv2.imshow('right(R)', rightFrame)
         
-        print(disparity_image)
+       
         # # plt.imshow(disparity_image, cmap='plasma')
         # plt.colorbar()
         # plt.show()
@@ -210,29 +202,38 @@ if __name__ == '__main__':
         # ''' Calc depth from B*F/disparity'''
 
         
-        B = -1/Q[3][2]
+        B =  -1/Q[3][2]
         F = Q[2][3]
 
         print('B', B, 'F', F, 'BF', B*F)
-        depth = - (B * F / disparity_image)#/ 100 # meteres
+        depth =  (B * F / disparity_image)#/ 100 # meteres
 
 
+        h, w = disparity_image.shape
         ''' Label depths for select points '''
-        # center (width/2, height/2)
+
         centers = []
-        centers.append([disparity_image.shape[1] // 2, disparity_image.shape[0] // 4])
-        centers.append([disparity_image.shape[1] // 2, disparity_image.shape[0] // 2])
-        centers.append([disparity_image.shape[1] // 4, disparity_image.shape[0] // 2])
+        centers.append([h // 2, w // 4]) 
+        centers.append([h // 2, w // 2]) # find center of image 
+        centers.append([h - (h // 4), w - (w// 2)])
+        centers.append([h - (h // 4), w - (w// 4)])
 
+        colored_disparity = disparity_image 
 
-        for center in centers:
+        for i, j in centers:
 
-            center_depth = depth[center[0]][center[1]]
-            cv2.circle(disparity_image, center, 15, (255,255,255), -1)
-            cv2.putText(disparity_image, str(center_depth), center, cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (255,255,255), 2, cv2.LINE_AA)
+            depth_src = depth[i][j] # corresponds to src image 
 
-        cv2.imshow('Disparity', disparity_image)
+            # there'll be an offset on disparity image 
+            try:
+                colored_disparity = cv2.cvtColor(colored_disparity,cv2.COLOR_GRAY2RGB)
+            except:
+                pass
+            cv2.circle(colored_disparity, (j,i), 15, (255,0,0), -1)
+            cv2.putText(colored_disparity, f'{str(round(depth_src,3))}m', (j+10,i+10), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (255,0,0), 2)
+
+        cv2.imshow('Disparity', colored_disparity)
         cv2.waitKey(1)
    
         
