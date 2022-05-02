@@ -1,21 +1,36 @@
 import cv2
 import cv2.aruco as aruco
+import argparse
 
-# Create gridboard, which is a set of Aruco markers
-# the following call gets a board of markers 5 wide X 7 tall
-gridboard = aruco.GridBoard_create(
-        markersX=5, 
-        markersY=7, 
-        markerLength=0.04, 
-        markerSeparation=0.01, 
-        dictionary=aruco.Dictionary_get(aruco.DICT_5X5_1000))
+'''
+Generates an aruco gridboard given specified parameters
+and saves to output file 
+'''
 
-# Create an image from the gridboard
-img = gridboard.draw(outSize=(988, 1400))
-cv2.imwrite("setup/aruco_board.jpg", img)
+def main(args):
+    # Create gridboard, which is a set of Aruco markers
+    # the following call gets a board of markers 5 wide X 7 tall
+    gridboard = aruco.GridBoard_create(
+            markersX=5, 
+            markersY=7, 
+            markerLength=0.04, 
+            markerSeparation=0.01, 
+            dictionary=aruco.Dictionary_get(aruco.DICT_5X5_1000))
 
-# Display the image to us
-cv2.imshow('Gridboard', img)
-# Exit on any key
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    # Create an image from the gridboard
+    img = gridboard.draw(outSize=(988, 1400))
+    cv2.imwrite(args.f, img)
+    # Display the image to us
+    cv2.imshow('Gridboard', img)
+    # Exit on any key
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Calculates relative pose between two cameras ")
+    parser.add_argument("-f", type=str, default='setup/aruco_board.jpg', help="Save file")
+    args = parser.parse_args()
+    main(args)
+    
